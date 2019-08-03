@@ -2,6 +2,11 @@
 #include <stdint.h>
 #include <math.h>
 
+#include <iostream>
+
+# define M_PI           3.14159265358979323846
+
+//NOTE : do depth testung with scaling, and a vector sort by overloading <
 
 typedef unsigned char asciiChar;
 
@@ -158,10 +163,12 @@ int main()
 		camera = {( player.x * 24) - (800/2), player.y * 24 -(600/2), camera.rotZ };
 
 		window.clear(sf::Color::Black);
-
+		std::cout << camera.rotZ << std::endl;
 		for (Tile ent : list)
 		{
 			ent.sprite.setPosition(to_global(ent.x,ent.y,camera));
+			ent.sprite.setRotation(camera.rotZ * (180.f/M_PI));
+			
 			window.draw(ent.sprite);
 		}
 
