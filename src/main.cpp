@@ -1,5 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <stdint.h>
+#include <math.h>
+
 
 typedef unsigned char asciiChar;
 
@@ -36,7 +38,7 @@ struct Player
 struct Camera
 {
 	int x, y;
-	float rotZ;
+	double rotZ;
 };
 
 char map[12 * 12] = {
@@ -79,9 +81,15 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 	return list_entities;
 }
 
-sf::Vector2f to_global(int x, int y , Camera cam)
+sf::Vector2f to_global(float x, float y , Camera cam)
 {
-	sf::Vector2f vec(x * 24 - cam.x, y * 24 - cam.y);
+	 x = x * 24 ;
+	 y = y * 24 ;
+
+	float xp = (x - cam.x) * cosf(cam.rotZ) - (y - cam.y) * sinf(cam.rotZ);
+	float yp = (x - cam.x) * sinf(cam.rotZ) + (y - cam.y) * cosf(cam.rotZ);
+
+	sf::Vector2f vec( xp , yp );
 	return vec;
 }
 
@@ -140,9 +148,14 @@ int main()
 			{
 				player.y += 1;
 			}
+
+			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+			{
+				camera.rotZ = event.mouseMove.x /600.0f;
+			}
 		}
 
-		camera = {( player.x * 24) - (800/2), player.y * 24 -(600/2) };
+		camera = {( player.x * 24) - (800/2), player.y * 24 -(600/2), camera.rotZ };
 
 		window.clear(sf::Color::Black);
 
