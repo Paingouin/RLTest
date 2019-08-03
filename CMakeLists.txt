@@ -29,6 +29,7 @@ add_executable(RLTestBin
 			./src/main.cpp		
 			)
 
+
 set_target_properties( RLTestBin
     PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
@@ -43,26 +44,24 @@ include(build_dependencies)
 
 target_include_directories(RLTestBin
 					PRIVATE
-					"./include"
+					include
 					${SDL2_INCLUDE_DIR}
+					${SFML_INCLUDE_DIR}
 				)
 				
 target_link_directories(
 			RLTestBin
 			PRIVATE
 			${SDL2_LIBRARY_DIR}
+			${SFML_LIBRARY_DIR}
 			)
 			
 target_link_libraries(RLTestBin 
 			${SDL2_LIBRARIES}
+			${SFML_LIBRARIES}
 			)
 			
-add_dependencies(RLTestBin sdl2)
 
-	add_custom_command(TARGET sdl2_ext POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_INSTALL_PREFIX}/deps/${CMAKE_BUILD_TYPE}/bin"
-       "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
 	   
 	   
 	   

@@ -1,60 +1,45 @@
-#include <SDL.h>
-#include "Console.h"
+#include <SFML/Graphics.hpp>
+#include <stdint.h>
 
-#define SCREEN_WIDTH	1280
-#define SCREEN_HEIGHT	720
+typedef unsigned char asciiChar;
 
-#define NUM_COLS	80
-#define NUM_ROWS	45
+typedef uint8_t		uint8;
+typedef uint32_t	uint32;
+typedef uint64_t	uint64;
+typedef int32_t		int32;
+typedef int64_t		int64;
 
-void render_screen(SDL_Renderer* renderer, SDL_Texture* screen, uint32* pixels)
+#define internal static
+#define local_persist static
+#define global_variable static
+
+
+
+int main()
 {
-	SDL_UpdateTexture(screen, NULL, pixels, SCREEN_WIDTH * sizeof(uint32));
-	SDL_RenderClear(renderer);
-	SDL_RenderCopy(renderer, screen, NULL, NULL);
-	SDL_RenderPresent(renderer);
-}
+	sf::RenderWindow  window(sf::VideoMode(800, 600), "RL test");
 
-int main(int argc, char* argv[]) {
+	window.setVerticalSyncEnabled(true);
+	window.setFramerateLimit(60);
 
-	SDL_Init(SDL_INIT_VIDEO);
-
-	SDL_Window* window = SDL_CreateWindow("Test RL",
-		SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED,
-		SCREEN_WIDTH, SCREEN_HEIGHT,
-		0);
-
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_SOFTWARE);
-
-	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-	SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	int x = 8, y = 8;
-
-	SDL_Texture* sprite = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-	
-	
-	bool done = false;
-	while (!done) {
-
-		SDL_Event event;
-		while (SDL_PollEvent(&event) != 0) {
-
-			if (event.type == SDL_QUIT) {
-				done = true;
-				break;
-			}
-
+	// run the program as long as the window is open
+	while (window.isOpen())
+	{
+		// check all the window's events that were triggered since the last iteration of the loop
+		sf::Event event;
+		while (window.pollEvent(event))
+		{
+			// "close requested" event: we close the window
+			if (event.type == sf::Event::Closed)
+				window.close();
 		}
 
-		render_screen(renderer, screen, console.pixels);
+		window.clear(sf::Color::Black);
+
+
+
+		window.display();
 	}
-
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-
-	SDL_Quit();
 
 	return 0;
 }
