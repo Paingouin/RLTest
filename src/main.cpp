@@ -28,6 +28,7 @@ struct Tile
 	int32 x, y, z;
 	int32 color;
 	sf::Sprite sprite;
+	//add scale factor for depth testing 
 };
 
 
@@ -42,8 +43,14 @@ struct Player
 
 struct Camera
 {
-	int x, y;
+	int32 x, y;
 	double rotZ;
+};
+
+
+struct Controller
+{
+	int32 lastPosMouse;
 };
 
 char map[12 * 12] = {
@@ -88,13 +95,13 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 
 sf::Vector2f to_global(float x, float y , Camera cam)
 {
-	 x = x * 24 ;
-	 y = y * 24 ;
+	 x = x * 24  - cam.x ;
+	 y = y * 24  - cam.y ;
 
-	float xp = (x - cam.x) * cosf(cam.rotZ) - (y - cam.y) * sinf(cam.rotZ);
-	float yp = (x - cam.x) * sinf(cam.rotZ) + (y - cam.y) * cosf(cam.rotZ);
+	float xp = (x ) * cosf(cam.rotZ) - (y ) * sinf(cam.rotZ);
+	float yp = (x ) * sinf(cam.rotZ) + (y ) * cosf(cam.rotZ);
 
-	sf::Vector2f vec( xp , yp );
+	sf::Vector2f vec(xp +(800/2), yp +(600/2));
 	return vec;
 }
 
@@ -114,7 +121,7 @@ int main()
 
 	const sf::Texture& texture = font.getTexture(24);
 	std::vector<Tile> list = gensprite_map(font, texture, map);
-
+	Controller control = {};
 	
 	Player player =
 	{
@@ -125,7 +132,7 @@ int main()
 		, 0
 		,sf::Sprite(texture, font.getGlyph('@', 24, false).textureRect)
 	};
-	Camera camera = { 800/4, 600/4 };
+	Camera camera = {  };
 
 	// run the program as long as the window is open
 	while (window.isOpen())
@@ -156,11 +163,14 @@ int main()
 
 			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
 			{
-				camera.rotZ = event.mouseMove.x /600.0f;
+
+				camera.rotZ += (control.lastPosMouse - event.mouseMove.x) /100.0f;
+				control.lastPosMouse = event.mouseMove.x;
 			}
 		}
-
-		camera = {( player.x * 24) - (800/2), player.y * 24 -(600/2), camera.rotZ };
+		int playerRx = player.x * 24;
+		int playerRy = player.y * 24;
+		camera = { playerRx + (10) , playerRy + (10), camera.rotZ };
 
 		window.clear(sf::Color::Black);
 		std::cout << camera.rotZ << std::endl;
@@ -171,8 +181,9 @@ int main()
 			
 			window.draw(ent.sprite);
 		}
-
-		player.sprite.setPosition(800/2, 600/2);
+		std::cout << camera.x << ":"  << camera.y<< std::endl;
+		player.sprite.setPosition(to_global(player.x, player.y, camera));
+		player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
 		window.draw(player.sprite);
 
 		window.display();
