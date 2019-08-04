@@ -8,6 +8,8 @@
 
 //NOTE : do depth testung with scaling, and a vector sort by overloading <
 
+//"angle" of the keypress, subtract the camera Z rotation, find the nearest matching direction
+
 typedef unsigned char asciiChar;
 
 typedef uint8_t		uint8;
@@ -86,7 +88,7 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 							, 0
 							,sf::Sprite(texture, font.getGlyph(map[x + y * 12], 24, false).textureRect )
 			};
-			ent.sprite.setColor(sf::Color(255, 255, 255));
+			ent.sprite.setColor(sf::Color(250, 205, 195));
 			list_entities.push_back(ent);
 		}
 	}
