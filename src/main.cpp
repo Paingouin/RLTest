@@ -56,13 +56,13 @@ struct Player
 struct Camera
 {
 	int32 x, y,z;
-	double rotZ;
+	double rotZ , rotX;
 };
 
 
 struct Controller
 {
-	int32 lastPosMouse;
+	int32 lastPosMouseX, lastPosMouseZ;
 };
 
 char map[12 * 12] = {
@@ -110,7 +110,7 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 	// x = x * 24  - cam.x ;
 	// y = y * 24  - cam.y ;
 
-	float fov = 45;
+	float fov = 80;
 	double S = 1 / (glm::tan((fov / 2) * (M_PI / 180)));
 	double near = 0.1;
 	double far = 100;
@@ -128,16 +128,24 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 		 1 , 0 , 0 , 0,
 		 0 , 1 , 0 , 0,
 		 0 , 0 , 1 , 0,
-		 -cam.x , -cam.y , -cam.z, 1
+		 -cam.x , -cam.y ,0, 1
 	 };
 
-	 glm::mat4 mRotation =
+	 glm::mat4 mRotationX =
 	{
-		cosf(cam.rotZ) , sinf(cam.rotZ) ,  0, 0,
-		-sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 , 0,
-		 0, 0, 1,0,
-		 0 , 0,   0, 1
+		1 , 0 ,  0, 0,
+		0,   cosf(cam.rotX),-sinf(cam.rotX), 0,
+		 0,  sinf(cam.rotX), cosf(cam.rotZ),0,
+		 0 , 0,  0, 1
 	};
+
+	 glm::mat4 mRotationZ =
+	 {
+		 cosf(cam.rotZ) , sinf(cam.rotZ) ,  0, 0,
+		 -sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 , 0,
+		  0, 0, 1,0,
+		  0 , 0,   0, 1
+	 };
 
 	glm::mat4 mScale =
 	{
@@ -149,14 +157,15 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 
 	glm::vec4 orig = { x, y, z,1 };
 	
-	auto model =/* mRotation **/ mTranslate * mScale ;
+	auto model = glm::inverse(mTranslate) * mRotationZ * mRotationX * mTranslate  * mScale ;
 
-	auto camPos = glm::vec3(cam.x, cam.z, cam.z) * 23;
+	//auto camPos = glm::vec3(cam.x, cam.z, cam.z) * 23;
 	glm::mat4 mView = glm::lookAt(
-		glm::vec3(cam.x, cam.z, cam.z), // Camera is at (4,3,3), in World Space
-		glm::vec3(0, 0, 0), // and looks at the origin
+		glm::vec3(cam.x, cam.y, cam.z), // Camera is at (4,3,3), in World Space
+		glm::vec3(cam.x, cam.y, 0), // and looks at the origin
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
+
 	auto mProjection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f) ;
 
 
@@ -166,7 +175,7 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 	//float xp = view.x * cosf(cam.rotZ) - (view.y ) * sinf(cam.rotZ);
 	//float yp = (view.x ) * sinf(cam.rotZ) + (view.y ) * cosf(cam.rotZ);
 
-	sf::Vector2f vec(mFinal.x +(800/2) , mFinal.y  +(600/2));	
+	sf::Vector2f vec(mFinal.x  +800/2, mFinal.y + 600 / 2);
 	return vec;
 }
 
@@ -229,8 +238,10 @@ int main()
 			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
 			{
 
-				camera.rotZ += (control.lastPosMouse - event.mouseMove.x) /100.0f;
-				control.lastPosMouse = event.mouseMove.x;
+				camera.rotZ += (control.lastPosMouseZ - event.mouseMove.x) /100.0f;
+				camera.rotX += (control.lastPosMouseX - event.mouseMove.y) / 100.0f;
+				control.lastPosMouseZ = event.mouseMove.x;
+				control.lastPosMouseX = event.mouseMove.y;
 			}
 			if (event.type == sf::Event::MouseWheelScrolled)
 			{
@@ -238,10 +249,10 @@ int main()
 					scale = glm::mix(scale, scale + (event.mouseWheelScroll.delta), 0.1);
 			}
 		}
-		camera = { player.x*24 , player.y*24 , 30, camera.rotZ };
+		camera = { player.x*24 , player.y*24 , 300, camera.rotZ , camera.rotX};
 
 		window.clear(sf::Color::Black);
-		std::cout << camera.rotZ << std::endl;
+		//std::cout << camera.rotZ << std::endl;
 		double scaleProject = 1;
 		for (Tile ent : list)
 		{
@@ -250,7 +261,7 @@ int main()
 			ent.sprite.setScale(1, 1);
 			window.draw(ent.sprite);
 		}
-		std::cout << camera.x << ":"  << camera.y<< std::endl;
+		//std::cout << camera.x << ":"  << camera.y<< std::endl;
 		player.sprite.setPosition(to_global(player.x, player.y,player.z, camera, scaleProject));
 		player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
 		player.sprite.setScale(1, 1);
