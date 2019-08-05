@@ -8,7 +8,8 @@
 
 
 # define M_PI           3.14159265358979323846
-//PERSPECTIVE = width * 0.8;
+
+int PERSPECTIVE = 800 * 0.8;
 
 
 //NOTE : do depth testung with scaling, and a vector sort by overloading <
@@ -27,6 +28,7 @@ typedef int64_t		int64;
 #define local_persist static
 #define global_variable static
 
+global_variable float scale = 1;
 
 struct Tile
 {
@@ -34,6 +36,7 @@ struct Tile
 
 	int32 x, y, z;
 	int32 color;
+	float scaleFactor;
 	sf::Sprite sprite;
 	//add scale factor for depth testing 
 };
@@ -50,7 +53,7 @@ struct Player
 
 struct Camera
 {
-	int32 x, y;
+	int32 x, y,z;
 	double rotZ;
 };
 
@@ -73,7 +76,6 @@ char map[12 * 12] = {
 	'#','+','+','+','+','+','+','+','+','+','+','#',
 	'#','+','+','+','+','+','+','+','+','+','+','#',
 	'#','#','#','#','#','#','#','#','#','#','#','#',
-
 };
 
 
@@ -91,6 +93,7 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 							, y 
 							, ((x>3 ) ? x-3 : 0)
 							, 0
+							, 1
 							,sf::Sprite(texture, font.getGlyph(map[x + y * 12], 24, false).textureRect )
 			};
 			ent.sprite.setColor(sf::Color(250, 205, 195));
@@ -100,42 +103,54 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 	return list_entities;
 }
 
-sf::Vector2f to_global(float x, float y , Camera cam)
+sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 {
 	// x = x * 24  - cam.x ;
 	// y = y * 24  - cam.y ;
 
+	double S = 1 / (glm::tan((90 / 2) * (M_PI / 180)));
+	double near = 0.1;
 
+	glm::mat4 mPerspective =
+	{
+		 S , 0 , 0 , 0,
+		 0 , S , 0 , 0,
+		 0 , 0 , -(100/(100- near)) , -((100 * near) / (100 - near)),
+		 0 , 0 , -1 , 0
+	};
 
-	 glm::mat3 mTranslate =
-	 {
-		  1 , 0 ,  - cam.x ,
-		  0 , 1,   - cam.y ,
-	      0 , 0,   1
+	glm::mat4 mTranslate =
+	{
+		 1 , 0 , 0 , 0,
+		 0 , 1 , 0 , 0,
+		 0 , 0 , 1 , 0,
+		 -cam.x , -cam.y , -cam.z, 1
 	 };
 
-	 glm::mat3 mRotation =
+	 glm::mat4 mRotation =
 	{
-		cosf(cam.rotZ) , -sinf(cam.rotZ) ,  0,
-		 sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 ,
-		 0 , 0,   1
+		cosf(cam.rotZ) , sinf(cam.rotZ) ,  0, 0,
+		-sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 , 0,
+		 0, 0, 1,0,
+		 0 , 0,   0, 1
 	};
 
-	glm::mat3 mScale =
+	glm::mat4 mScale =
 	{
-		 24 , 0 ,  0,
-		 0 , 24,   0,
-		 0 , 0,   1
+		 24 * scale, 0  , 0,  0,
+		 0 , 24 * scale, 0,  0,
+		 0 , 0 ,  24 * scale , 0,
+		 0 , 0,   0,  1
 	};
 
-	glm::vec3 orig = { x,y,1 };
+	glm::vec4 orig = { x,y, z,1 };
 	
-	auto mFinal =   mRotation * mTranslate * mScale * orig;
+	auto mFinal = mPerspective* mRotation * mScale * mTranslate * orig;
 
 	//float xp = view.x * cosf(cam.rotZ) - (view.y ) * sinf(cam.rotZ);
 	//float yp = (view.x ) * sinf(cam.rotZ) + (view.y ) * cosf(cam.rotZ);
 
-	sf::Vector2f vec(mFinal.x, mFinal.y);	
+	sf::Vector2f vec(mFinal.x +(800/2) , mFinal.y  +(600/2));	
 	return vec;
 }
 
@@ -153,7 +168,7 @@ int main()
 		// error...
 	}
 
-	const sf::Texture& texture = font.getTexture(24);
+	const sf::Texture& texture = font.getTexture(24 * scale);
 	std::vector<Tile> list = gensprite_map(font, texture, map);
 	Controller control = {};
 	
@@ -164,7 +179,7 @@ int main()
 		, 6 
 		, 0
 		, 0
-		,sf::Sprite(texture, font.getGlyph('@', 24, false).textureRect)
+		,sf::Sprite(texture, font.getGlyph('@', 24 * scale, false).textureRect)
 	};
 	Camera camera = {  };
 
@@ -201,23 +216,28 @@ int main()
 				camera.rotZ += (control.lastPosMouse - event.mouseMove.x) /100.0f;
 				control.lastPosMouse = event.mouseMove.x;
 			}
+			if (event.type == sf::Event::MouseWheelScrolled)
+			{
+				//std::cout << "wheel movement: " <<  << std::endl
+					scale = glm::mix(scale, scale + (event.mouseWheelScroll.delta), 0.1);
+			}
 		}
-		int playerRx = player.x * 24;
-		int playerRy = player.y * 24;
-		camera = { playerRx + (10) , playerRy + (10), camera.rotZ };
+		camera = { player.x , player.y , 100, camera.rotZ };
 
 		window.clear(sf::Color::Black);
 		std::cout << camera.rotZ << std::endl;
+		double scaleProject = 0;
 		for (Tile ent : list)
 		{
-			ent.sprite.setPosition(to_global(ent.x,ent.y,camera));
+			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, scaleProject));
 			ent.sprite.setRotation(camera.rotZ * (180.f/M_PI));
-			
+			ent.sprite.setScale(1, 1);
 			window.draw(ent.sprite);
 		}
 		std::cout << camera.x << ":"  << camera.y<< std::endl;
-		player.sprite.setPosition(to_global(player.x, player.y, camera));
+		player.sprite.setPosition(to_global(player.x, player.y,player.z, camera, scaleProject));
 		player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
+		player.sprite.setScale(1, 1);
 		window.draw(player.sprite);
 
 		window.display();
