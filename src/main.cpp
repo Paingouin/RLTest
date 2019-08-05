@@ -3,6 +3,8 @@
 #include <math.h>
 
 #include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/transform.hpp"
 
 #include <iostream>
 
@@ -91,7 +93,7 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 							map[x + y * 12]
 							, x 
 							, y 
-							, ((x>3 ) ? x-3 : 0)
+							, ((x>3 && map[x + y * 12] == '+') ? x-3 : 0)
 							, 0
 							, 1
 							,sf::Sprite(texture, font.getGlyph(map[x + y * 12], 24, false).textureRect )
@@ -108,15 +110,17 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 	// x = x * 24  - cam.x ;
 	// y = y * 24  - cam.y ;
 
-	double S = 1 / (glm::tan((90 / 2) * (M_PI / 180)));
+	float fov = 45;
+	double S = 1 / (glm::tan((fov / 2) * (M_PI / 180)));
 	double near = 0.1;
+	double far = 100;
 
 	glm::mat4 mPerspective =
 	{
 		 S , 0 , 0 , 0,
 		 0 , S , 0 , 0,
-		 0 , 0 , -(100/(100- near)) , -((100 * near) / (100 - near)),
-		 0 , 0 , -1 , 0
+		 0 , 0 , -(far /(far - near)) ,-1 ,
+		 0 , 0 , -((far * near) / (far - near)) , 0
 	};
 
 	glm::mat4 mTranslate =
@@ -137,15 +141,27 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 
 	glm::mat4 mScale =
 	{
-		 24 * scale, 0  , 0,  0,
-		 0 , 24 * scale, 0,  0,
-		 0 , 0 ,  24 * scale , 0,
+		 24, 0  , 0,  0,
+		 0 , 24, 0,  0,
+		 0 , 0 ,  24  , 0,
 		 0 , 0,   0,  1
 	};
 
-	glm::vec4 orig = { x,y, z,1 };
+	glm::vec4 orig = { x, y, z,1 };
 	
-	auto mFinal = mPerspective* mRotation * mScale * mTranslate * orig;
+	auto model =/* mRotation **/ mTranslate * mScale ;
+
+	auto camPos = glm::vec3(cam.x, cam.z, cam.z) * 23;
+	glm::mat4 mView = glm::lookAt(
+		glm::vec3(cam.x, cam.z, cam.z), // Camera is at (4,3,3), in World Space
+		glm::vec3(0, 0, 0), // and looks at the origin
+		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+	);
+	auto mProjection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f) ;
+
+
+	auto MVPmatric = mProjection * mView * model;
+	auto mFinal = MVPmatric * orig;
 
 	//float xp = view.x * cosf(cam.rotZ) - (view.y ) * sinf(cam.rotZ);
 	//float yp = (view.x ) * sinf(cam.rotZ) + (view.y ) * cosf(cam.rotZ);
@@ -168,7 +184,7 @@ int main()
 		// error...
 	}
 
-	const sf::Texture& texture = font.getTexture(24 * scale);
+	const sf::Texture& texture = font.getTexture(24 );
 	std::vector<Tile> list = gensprite_map(font, texture, map);
 	Controller control = {};
 	
@@ -179,7 +195,7 @@ int main()
 		, 6 
 		, 0
 		, 0
-		,sf::Sprite(texture, font.getGlyph('@', 24 * scale, false).textureRect)
+		,sf::Sprite(texture, font.getGlyph('@', 24 , false).textureRect)
 	};
 	Camera camera = {  };
 
@@ -222,11 +238,11 @@ int main()
 					scale = glm::mix(scale, scale + (event.mouseWheelScroll.delta), 0.1);
 			}
 		}
-		camera = { player.x , player.y , 100, camera.rotZ };
+		camera = { player.x*24 , player.y*24 , 30, camera.rotZ };
 
 		window.clear(sf::Color::Black);
 		std::cout << camera.rotZ << std::endl;
-		double scaleProject = 0;
+		double scaleProject = 1;
 		for (Tile ent : list)
 		{
 			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, scaleProject));
