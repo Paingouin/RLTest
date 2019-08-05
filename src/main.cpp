@@ -2,9 +2,14 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "glm/glm.hpp"
+
 #include <iostream>
 
+
 # define M_PI           3.14159265358979323846
+//PERSPECTIVE = width * 0.8;
+
 
 //NOTE : do depth testung with scaling, and a vector sort by overloading <
 
@@ -97,13 +102,40 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 
 sf::Vector2f to_global(float x, float y , Camera cam)
 {
-	 x = x * 24  - cam.x ;
-	 y = y * 24  - cam.y ;
+	// x = x * 24  - cam.x ;
+	// y = y * 24  - cam.y ;
 
-	float xp = (x ) * cosf(cam.rotZ) - (y ) * sinf(cam.rotZ);
-	float yp = (x ) * sinf(cam.rotZ) + (y ) * cosf(cam.rotZ);
 
-	sf::Vector2f vec(xp +(800/2), yp +(600/2));
+
+	 glm::mat3 mTranslate =
+	 {
+		  1 , 0 ,  - cam.x ,
+		  0 , 1,   - cam.y ,
+	      0 , 0,   1
+	 };
+
+	 glm::mat3 mRotation =
+	{
+		cosf(cam.rotZ) , -sinf(cam.rotZ) ,  0,
+		 sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 ,
+		 0 , 0,   1
+	};
+
+	glm::mat3 mScale =
+	{
+		 24 , 0 ,  0,
+		 0 , 24,   0,
+		 0 , 0,   1
+	};
+
+	glm::vec3 orig = { x,y,1 };
+	
+	auto mFinal =   mRotation * mTranslate * mScale * orig;
+
+	//float xp = view.x * cosf(cam.rotZ) - (view.y ) * sinf(cam.rotZ);
+	//float yp = (view.x ) * sinf(cam.rotZ) + (view.y ) * cosf(cam.rotZ);
+
+	sf::Vector2f vec(mFinal.x, mFinal.y);	
 	return vec;
 }
 
