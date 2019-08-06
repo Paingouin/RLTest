@@ -13,6 +13,12 @@
 
 int PERSPECTIVE = 800 * 0.8;
 
+const float YAW = -90.0f;
+const float PITCH = 0.0f;
+const float SPEED = 2.5f;
+const float SENSITIVITY = 1.f;
+const float ZOOM = 90.0f;
+
 
 //NOTE : do depth testung with scaling, and a vector sort by overloading <
 
@@ -55,8 +61,67 @@ struct Player
 
 struct Camera
 {
-	int32 x, y,z;
-	double rotZ , rotX;
+	// Camera Attributes
+	glm::vec3 Position;
+	glm::vec3 Front;
+	glm::vec3 Up;
+	glm::vec3 Right;
+	glm::vec3 WorldUp;
+
+	// Euler Angles
+	float Yaw;
+	float Pitch;
+	// Camera options
+	float MovementSpeed;
+	float MouseSensitivity;
+	float Zoom;
+
+	// Calculates the front vector from the Camera's (updated) Euler Angles
+	void updateCameraVectors()
+	{
+		// Calculate the new Front vector
+		glm::vec3 front;
+		front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+		front.y = sin(glm::radians(Pitch));
+		front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+		Front = glm::normalize(front);
+		// Also re-calculate the Right and Up vector
+		Right = glm::normalize(glm::cross(Front, WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+		Up = glm::normalize(glm::cross(Right, Front));
+	}
+
+	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
+	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true)
+	{
+		xoffset *= MouseSensitivity;
+		yoffset *= MouseSensitivity;
+
+		Yaw += xoffset;
+		Pitch += yoffset;
+
+		// Make sure that when pitch is out of bounds, screen doesn't get flipped
+		if (constrainPitch)
+		{
+			if (Pitch > 89.0f)
+				Pitch = 89.0f;
+			if (Pitch < -89.0f)
+				Pitch = -89.0f;
+		}
+
+		// Update Front, Right and Up Vectors using the updated Euler angles
+		updateCameraVectors();
+	}
+
+	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
+	void ProcessMouseScroll(float yoffset)
+	{
+		if (Zoom >= 1.0f && Zoom <= 45.0f)
+			Zoom -= yoffset;
+		if (Zoom <= 1.0f)
+			Zoom = 1.0f;
+		if (Zoom >= 45.0f)
+			Zoom = 45.0f;
+	}
 };
 
 
@@ -65,19 +130,25 @@ struct Controller
 	int32 lastPosMouseX, lastPosMouseZ;
 };
 
-char map[12 * 12] = {
-	'#','#','#','#','#','#','#','#','#','#','#','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','#',
-	'#','#','#','#','#','#','#','#','#','#','#','#',
+char map[18 * 18] = {
+	'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#',
 };
 
 
@@ -85,18 +156,18 @@ char map[12 * 12] = {
 std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char* map)
 {
 	std::vector<Tile> list_entities;
-	for (int y = 0; y < 12; ++y)
+	for (int y = 0; y < 18; ++y)
 	{
-		for (int x = 0; x < 12; ++x)
+		for (int x = 0; x < 18; ++x)
 		{
 			Tile ent = {
-							map[x + y * 12]
+							map[x + y * 18]
 							, x 
 							, y 
-							, ((x>3 && map[x + y * 12] == '+') ? x-3 : 0)
+							, ((x>3 && map[x + y * 18] == '+') ? x-3 : 0)
 							, 0
 							, 1
-							,sf::Sprite(texture, font.getGlyph(map[x + y * 12], 24, false).textureRect )
+							,sf::Sprite(texture, font.getGlyph(map[x + y * 18], 24, false).textureRect )
 			};
 			ent.sprite.setColor(sf::Color(250, 205, 195));
 			list_entities.push_back(ent);
@@ -105,47 +176,55 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 	return list_entities;
 }
 
-sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
+sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target)
 {
 	// x = x * 24  - cam.x ;
 	// y = y * 24  - cam.y ;
 
-	float fov = 80;
-	double S = 1 / (glm::tan((fov / 2) * (M_PI / 180)));
-	double near = 0.1;
-	double far = 100;
-
-	glm::mat4 mPerspective =
+		/*glm::mat4 mPerspective =
 	{
 		 S , 0 , 0 , 0,
 		 0 , S , 0 , 0,
 		 0 , 0 , -(far /(far - near)) ,-1 ,
 		 0 , 0 , -((far * near) / (far - near)) , 0
 	};
+	*/
 
-	glm::mat4 mTranslate =
-	{
-		 1 , 0 , 0 , 0,
-		 0 , 1 , 0 , 0,
-		 0 , 0 , 1 , 0,
-		 -cam.x , -cam.y ,0, 1
-	 };
-
+	/*
 	 glm::mat4 mRotationX =
 	{
 		1 , 0 ,  0, 0,
-		0,   cosf(cam.rotX),-sinf(cam.rotX), 0,
-		 0,  sinf(cam.rotX), cosf(cam.rotZ),0,
+	//	0,   cosf(cam.rotX),-sinf(cam.rotX), 0,
+	//	 0,  sinf(cam.rotX), cosf(cam.rotZ),0,
 		 0 , 0,  0, 1
 	};
 
 	 glm::mat4 mRotationZ =
 	 {
-		 cosf(cam.rotZ) , sinf(cam.rotZ) ,  0, 0,
-		 -sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 , 0,
+	//	 cosf(cam.rotZ) , sinf(cam.rotZ) ,  0, 0,
+	//	 -sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 , 0,
 		  0, 0, 1,0,
 		  0 , 0,   0, 1
 	 };
+
+		glm::mat4 mTranslate =
+	{
+		 1 , 0 , 0 , 0,
+		 0 , 1 , 0 , 0,
+		 0 , 0 , 1 , 0,
+		 -cam.Position.x , -cam.Position.y , 0 , 1
+	 };
+
+
+	 */
+
+	
+
+	glm::vec4 r2orig = {x+24, y+24, z, 1};
+	float fov = 100.0f;
+	double S = 1 / (glm::tan((fov / 2) * (M_PI / 180)));
+	float near =  0.1;
+	float far = 100;
 
 	glm::mat4 mScale =
 	{
@@ -155,26 +234,31 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 		 0 , 0,   0,  1
 	};
 
-	glm::vec4 orig = { x, y, z,1 };
+
+
 	
-	auto model = glm::inverse(mTranslate) * mRotationZ * mRotationX * mTranslate  * mScale ;
+	glm::vec4 orig = { x, y, z ,1};
+	// calculate the model matrix for each object and pass it to shader before drawing
+	 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
+	 glm::mat4 model = mScale;
 
 	//auto camPos = glm::vec3(cam.x, cam.z, cam.z) * 23;
 	glm::mat4 mView = glm::lookAt(
-		glm::vec3(cam.x, cam.y, cam.z), // Camera is at (4,3,3), in World Space
-		glm::vec3(cam.x, cam.y, 0), // and looks at the origin
-		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+		cam.Position, // Camera in World Space
+		cam.Position + cam.Front, // and looks at the target
+		cam.Up // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
-	auto mProjection = glm::perspective(glm::radians(fov), 800.0f / 600.0f, 0.1f, 100.0f) ;
+	auto mProjection = glm::perspective( glm::radians(fov), 800.0f / 600.0f, near,far) ;
 
 
 	auto MVPmatric = mProjection * mView * model;
+
 	auto mFinal = MVPmatric * orig;
 
 	//float xp = view.x * cosf(cam.rotZ) - (view.y ) * sinf(cam.rotZ);
 	//float yp = (view.x ) * sinf(cam.rotZ) + (view.y ) * cosf(cam.rotZ);
-
+	//scale = { mFinal2.x - mFinal.x,mFinal2.y - mFinal.y };
 	sf::Vector2f vec(mFinal.x  +800/2, mFinal.y + 600 / 2);
 	return vec;
 }
@@ -182,6 +266,8 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam ,double &scale)
 int main()
 {
 	sf::RenderWindow  window(sf::VideoMode(800, 600), "RL test");
+	float lastX = 400, lastY = 300;
+	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
 	window.setFramerateLimit(60);
@@ -206,8 +292,13 @@ int main()
 		, 0
 		,sf::Sprite(texture, font.getGlyph('@', 24 , false).textureRect)
 	};
-	Camera camera = {  };
-
+	Camera camera = { };
+	camera.WorldUp = {0,-1,0};
+	camera.Front = { 0,0,1 };
+	camera.MovementSpeed = SPEED;
+	camera.MouseSensitivity = SENSITIVITY;
+	camera.Zoom = ZOOM;
+	camera.updateCameraVectors();
 	// run the program as long as the window is open
 	while (window.isOpen())
 	{
@@ -238,32 +329,43 @@ int main()
 			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
 			{
 
-				camera.rotZ += (control.lastPosMouseZ - event.mouseMove.x) /100.0f;
-				camera.rotX += (control.lastPosMouseX - event.mouseMove.y) / 100.0f;
-				control.lastPosMouseZ = event.mouseMove.x;
-				control.lastPosMouseX = event.mouseMove.y;
+				if (firstMouse)
+				{
+					lastX = event.mouseMove.x;
+					lastY = event.mouseMove.y;
+					firstMouse = false;
+				}
+
+				float xoffset = event.mouseMove.x - lastX;
+				float yoffset = lastY - event.mouseMove.y; // reversed since y-coordinates go from bottom to top
+
+				lastX = event.mouseMove.x;
+				lastY = event.mouseMove.y;
+
+				camera.ProcessMouseMovement(xoffset, yoffset);
 			}
 			if (event.type == sf::Event::MouseWheelScrolled)
 			{
 				//std::cout << "wheel movement: " <<  << std::endl
-					scale = glm::mix(scale, scale + (event.mouseWheelScroll.delta), 0.1);
 			}
 		}
-		camera = { player.x*24 , player.y*24 , 300, camera.rotZ , camera.rotX};
-
+		player.z = list.at(player.x + player.y * 18).z;
+		camera.Position = { player.x * 24  + 1 * 24 , player.y * 24 + 2* 24 , player.z * 24 + 5 * 24 };
+		
+		glm::vec3 target = { player.x * 24, player.y * 24, player.z * 24 };
 		window.clear(sf::Color::Black);
 		//std::cout << camera.rotZ << std::endl;
-		double scaleProject = 1;
+		
 		for (Tile ent : list)
 		{
-			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, scaleProject));
-			ent.sprite.setRotation(camera.rotZ * (180.f/M_PI));
-			ent.sprite.setScale(1, 1);
+			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, target));
+			//ent.sprite.setRotation(camera. * (180.f/M_PI));
+			ent.sprite.scale(1,1);
 			window.draw(ent.sprite);
 		}
 		//std::cout << camera.x << ":"  << camera.y<< std::endl;
-		player.sprite.setPosition(to_global(player.x, player.y,player.z, camera, scaleProject));
-		player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
+		player.sprite.setPosition(to_global(player.x, player.y,player.z, camera, target));
+		//player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
 		player.sprite.setScale(1, 1);
 		window.draw(player.sprite);
 
