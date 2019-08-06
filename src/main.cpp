@@ -81,13 +81,14 @@ struct Camera
 	{
 		// Calculate the new Front vector
 		glm::vec3 front;
-		front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-		front.y = sin(glm::radians(Pitch));
-		front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-		Front = glm::normalize(front);
+		front.x = 1* cos(glm::radians(Pitch)) * cos(glm::radians(Yaw));
+		front.y = 1*sin(glm::radians(Pitch)) ;
+		front.z = 1*cos(glm::radians(Pitch)) * sin(glm::radians(Yaw));;
+		
+		Position += front;
 		// Also re-calculate the Right and Up vector
-		Right = glm::normalize(glm::cross(Front, WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		Up = glm::normalize(glm::cross(Right, Front));
+		//Right = glm::normalize(glm::cross(Position, WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+		//Up = glm::normalize(glm::cross(Right, Position));
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -109,7 +110,7 @@ struct Camera
 		}
 
 		// Update Front, Right and Up Vectors using the updated Euler angles
-		updateCameraVectors();
+
 	}
 
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
@@ -234,19 +235,17 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target
 		 0 , 0,   0,  1
 	};
 
-
-
 	
 	glm::vec4 orig = { x, y, z ,1};
-	// calculate the model matrix for each object and pass it to shader before drawing
+	// calculate the model matrix for each object and pass  before drawing
 	 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
 	 glm::mat4 model = mScale;
 
 	//auto camPos = glm::vec3(cam.x, cam.z, cam.z) * 23;
 	glm::mat4 mView = glm::lookAt(
 		cam.Position, // Camera in World Space
-		cam.Position + cam.Front, // and looks at the target
-		cam.Up // Head is up (set to 0,-1,0 to look upside-down)
+		{target.x, target.y, target.z}, // and looks at the target
+		{0,1,0}//cam.Up // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
 	auto mProjection = glm::perspective( glm::radians(fov), 800.0f / 600.0f, near,far) ;
@@ -293,8 +292,8 @@ int main()
 		,sf::Sprite(texture, font.getGlyph('@', 24 , false).textureRect)
 	};
 	Camera camera = { };
-	camera.WorldUp = {0,-1,0};
-	camera.Front = { 0,0,1 };
+	camera.WorldUp = {0,1,0};
+	camera.Front = { 0,0,0 };
 	camera.MovementSpeed = SPEED;
 	camera.MouseSensitivity = SENSITIVITY;
 	camera.Zoom = ZOOM;
@@ -350,7 +349,8 @@ int main()
 			}
 		}
 		player.z = list.at(player.x + player.y * 18).z;
-		camera.Position = { player.x * 24  + 1 * 24 , player.y * 24 + 2* 24 , player.z * 24 + 5 * 24 };
+		camera.Position = { player.x * 24  , player.y * 24, player.z * 24  };
+		camera.updateCameraVectors();
 		
 		glm::vec3 target = { player.x * 24, player.y * 24, player.z * 24 };
 		window.clear(sf::Color::Black);
@@ -359,7 +359,7 @@ int main()
 		for (Tile ent : list)
 		{
 			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, target));
-			//ent.sprite.setRotation(camera. * (180.f/M_PI));
+			//ent.sprite.setRotation(glm::radians(camera.Pitch));
 			ent.sprite.scale(1,1);
 			window.draw(ent.sprite);
 		}
