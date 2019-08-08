@@ -173,11 +173,7 @@ struct Camera
 
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
-		 mProjection = glm::perspectiveNO(glm::radians(fov), 800.f / 600.f, near, far);
-		//auto mMV = mView * model;
-		//auto MVPmatric = mProjection * ;
-		//auto mFinal = MVPmatric * orig;
-		//mFinal /= mFinal.w;//perspective divide
+		 mProjection = glm::perspectiveRH_ZO(glm::radians(fov), 800.f / 600.f, near, far);
 		
 	}
 
@@ -209,12 +205,12 @@ struct Camera
 		Zoom -= yoffset;
 
 
-	/*	if (Zoom >= 1.0f && Zoom <= 90.0f)
+		if (Zoom >= 1.0f && Zoom <= 90.0f)
 			Zoom -= yoffset;
 		if (Zoom <= 1.0f)
 			Zoom = 1.0f;
 		if (Zoom >= 90.0f)
-			Zoom = 90.0f;*/
+			Zoom = 90.0f;
 	}
 };
 
@@ -276,12 +272,13 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam , float& scale, bo
 	glm::vec4 orig = { x, y, z , 1 };
 	auto mFinal = cam.mProjection * cam.mView * cam.model * orig;
 	mFinal /= mFinal.w;
-	std::cout << mFinal.z << std::endl;
+	//std::cout << mFinal.z << std::endl;
 	//To do Z0 (NO par default) :  comment above and uncomment below
-	//mFinal.x = mFinal.x * 0.5 + 0.5;
-	//mFinal.y = mFinal.y * 0.5 + 0.5;
-	mFinal = mFinal * 0.5f + 0.5f;
+	mFinal.x = mFinal.x * 0.5 + 0.5;
+	mFinal.y = mFinal.y * 0.5 + 0.5;
+	//mFinal = mFinal * 0.5f + 0.5f;
 	
+	std::cout << mFinal.z << std::endl;
 	mFinal[0] = mFinal[0] * cam.viewport[2] + cam.viewport[0];
 	mFinal[1] = mFinal[1] * cam.viewport[3] + cam.viewport[1];
 
