@@ -66,6 +66,7 @@ struct Camera
 {
 	// Camera Attributes
 	glm::vec3 Position;
+	glm::vec3 LastPosition;
 	glm::vec3 Front;
 	glm::vec3 Up;
 	glm::vec3 Right;
@@ -79,8 +80,13 @@ struct Camera
 	float MouseSensitivity;
 	float Zoom;
 
+	glm::mat4 model;
+	glm::mat4 mView;
+	glm::mat4 mProjection;
+	glm::vec4 viewport = { 0.0 , 0.0, 800.0,600.0 };
+
 	// Calculates the front vector from the Camera's (updated) Euler Angles
-	void updateCameraVectors()
+	void updateCameraVectors(glm::vec3 target)
 	{
 		// Calculate the new Front vector
 		glm::vec3 posOffset;
@@ -96,6 +102,83 @@ struct Camera
 		// Also re-calculate the Right and Up vector
 		Right = glm::normalize(glm::cross(front, WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
 		Up = glm::normalize(glm::cross(Right, front));
+
+		// x = x * 24  - cam.x ;
+	// y = y * 24  - cam.y ;
+
+	/*
+	 glm::mat4 mRotationX =
+	{
+		1 , 0 ,  0, 0,
+	//	0,   cosf(cam.rotX),-sinf(cam.rotX), 0,
+	//	 0,  sinf(cam.rotX), cosf(cam.rotZ),0,
+		 0 , 0,  0, 1
+	};
+
+	 glm::mat4 mRotationZ =
+	 {
+	//	 cosf(cam.rotZ) , sinf(cam.rotZ) ,  0, 0,
+	//	 -sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 , 0,
+		  0, 0, 1,0,
+		  0 , 0,   0, 1
+	 };
+
+		glm::mat4 mTranslate =
+	{
+		 1 , 0 , 0 , 0,
+		 0 , 1 , 0 , 0,
+		 0 , 0 , 1 , 0,
+		 -cam.Position.x , -cam.Position.y , 0 , 1
+	 };
+	 glm::mat4 mPerspective =
+	{
+		 S*(800.0/600.0) , 0 , 0 , 0,
+		 0 , S , 0 , 0,
+		 0 , 0 , ((far +near) / (far - near)) ,1 ,
+		 0 , 0 ,( (2* far * near) / (near - far)) , 0
+	};
+
+	 */
+
+
+		float fov = 75.0f;
+		//double S = 1.0 / (glm::tan(fov / 2.0));
+		float near = 0.1f;
+		float far = 1000.f;
+
+
+		glm::mat4 mScale =
+		{
+			 24 , 0, 0, 0,
+			 0 , 24, 0, 0,
+			 0 , 0, 24, 0,
+			 0 , 0, 0, 1
+		};
+
+		// calculate the model matrix for each object and pass  before drawing
+		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
+		model = mScale;
+		glm::vec4 camPos = { Position.x , Position.y , Position.z  , 1 };
+		glm::vec4 tarPos = { target.x , target.y , target.z  , 1 };
+
+
+		glm::vec3 camPos3 = model * camPos;
+		glm::vec3 tarPos3 = model * tarPos;
+		//std::cout << "before cam:" << camPos3.x << " : " << camPos3.y << " : " << camPos3.z << std::endl;
+		mView = glm::lookAt(
+			camPos3, // Camera in World Space  
+			tarPos3, // and looks at the target
+			{ 0,1,0 } // Head is up (set to 0,-1,0 to look upside-down)
+		);
+
+		//NO : z is Normalized  [-1 +1]
+		//ZO : z is normalied [0 +1]
+		 mProjection = glm::perspectiveNO(glm::radians(fov), 800.f / 600.f, near, far);
+		//auto mMV = mView * model;
+		//auto MVPmatric = mProjection * ;
+		//auto mFinal = MVPmatric * orig;
+		//mFinal /= mFinal.w;//perspective divide
+		
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -167,7 +250,7 @@ char map[18 * 18] = {
 std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char* map)
 {
 	std::vector<Tile> list_entities;
-	for (int y = 0; y < 18; ++y)
+	for (int y = 17; y >= 0; --y)
 	{
 		for (int x = 0; x < 18; ++x)
 		{
@@ -188,112 +271,27 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 	return list_entities;
 }
 
-sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target, float& scale, bool& render)
+sf::Vector2f to_global(float x, float y , float z, Camera cam , float& scale, bool& render)
 {
-	// x = x * 24  - cam.x ;
-	// y = y * 24  - cam.y ;
-
-	/*
-	 glm::mat4 mRotationX =
-	{
-		1 , 0 ,  0, 0,
-	//	0,   cosf(cam.rotX),-sinf(cam.rotX), 0,
-	//	 0,  sinf(cam.rotX), cosf(cam.rotZ),0,
-		 0 , 0,  0, 1
-	};
-
-	 glm::mat4 mRotationZ =
-	 {
-	//	 cosf(cam.rotZ) , sinf(cam.rotZ) ,  0, 0,
-	//	 -sinf(cam.rotZ) ,  cosf(cam.rotZ),  0 , 0,
-		  0, 0, 1,0,
-		  0 , 0,   0, 1
-	 };
-
-		glm::mat4 mTranslate =
-	{
-		 1 , 0 , 0 , 0,
-		 0 , 1 , 0 , 0,
-		 0 , 0 , 1 , 0,
-		 -cam.Position.x , -cam.Position.y , 0 , 1
-	 };
-	 glm::mat4 mPerspective =
-	{
-		 S*(800.0/600.0) , 0 , 0 , 0,
-		 0 , S , 0 , 0,
-		 0 , 0 , ((far +near) / (far - near)) ,1 ,
-		 0 , 0 ,( (2* far * near) / (near - far)) , 0
-	};
-
-	 */
-
-	
-	float fov =75.0f;
-	double S = 1.0 / (glm::tan(fov / 2.0));
-	float near =  0.1f;
-	float far = 100.f;
-	
-	glm::mat4 mScale =
-	{
-		 24 , 0, 0, 0,
-		 0 , 24, 0, 0,
-		 0 , 0, 24, 0,
-		 0 , 0, 0, 1
-	};
-	
-	glm::vec4 orig = { x, y, z , 0};
-
-	// calculate the model matrix for each object and pass  before drawing
-	 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
-	glm::mat4 model = mScale;
-	glm::vec4 camPos = { cam.Position.x , cam.Position.y , cam.Position.z  , 0 };
-	glm::vec4 tarPos = { target.x , target.y , target.z  , 0};
-
-	
-	glm::vec3 camPos3 = model * camPos;
-	glm::vec3 tarPos3 = model * tarPos;
-	//std::cout << "before cam:" << camPos3.x << " : " << camPos3.y << " : " << camPos3.z << std::endl;
-	glm::mat4 mView = glm::lookAt(
-		camPos3, // Camera in World Space  
-		tarPos3, // and looks at the target
-		{0,1,0} // Head is up (set to 0,-1,0 to look upside-down)
-	);
-
-	//NO : z is Normalized  [-1 +1]
-	//ZO : z is normalied [0 +1]
-	auto mProjection = glm::perspectiveNO( glm::radians(fov), 800.f/600.f, near,far) ;
-	//auto mMV = mView * model;
-	//auto MVPmatric = mProjection * ;
-	//auto mFinal = MVPmatric * orig;
-	//mFinal /= mFinal.w;//perspective divide
-	glm::vec4 viewport = { 0.0 , 0.0, 800.0,600.0 };
-	auto mFinal = mProjection*  mView * model * orig;
-
+	glm::vec4 orig = { x, y, z , 1 };
+	auto mFinal = cam.mProjection * cam.mView * cam.model * orig;
 	mFinal /= mFinal.w;
-
-	//std::cout << mFinal.z << std::endl;
+	std::cout << mFinal.z << std::endl;
 	//To do Z0 (NO par default) :  comment above and uncomment below
 	//mFinal.x = mFinal.x * 0.5 + 0.5;
 	//mFinal.y = mFinal.y * 0.5 + 0.5;
 	mFinal = mFinal * 0.5f + 0.5f;
-	std::cout << mFinal.z << std::endl;
+	
+	mFinal[0] = mFinal[0] * cam.viewport[2] + cam.viewport[0];
+	mFinal[1] = mFinal[1] * cam.viewport[3] + cam.viewport[1];
 
-	mFinal[0] = mFinal[0] * viewport[2] + viewport[0];
-	mFinal[1] = mFinal[1] * viewport[3] + viewport[1];
-	if (mFinal.z > 1 || z < -1)
+
+	if (mFinal.z < -1|| mFinal.z > 1) //culling
 	{
 		render = false;
-		return {};
 	}
-
-	//auto mFinal = glm::project(orig, mMV, mProjection, viewport);
-	const float epsi = 0.00001f;
-
-	/*if (mFinal.z - (1.0f - epsi) < 0|| mFinal.z -(1.0f - epsi) > 1)
-	{
-		render = false;
-	}*/
 	sf::Vector2f vec(mFinal.x , mFinal.y);
+	//scale = 100.0 - (mFinal.z*100 / 2.0);
 	return vec;
 }
 
@@ -387,8 +385,13 @@ int main()
 		}
 		player.z = list.at(player.x + player.y * 18.0).z;
 		camera.Position = { player.x , player.y , player.z  };
-		camera.updateCameraVectors();
 		glm::vec3 target = { player.x , player.y , player.z };
+		if (camera.Position != camera.LastPosition)
+		{
+			camera.updateCameraVectors(target);
+			camera.LastPosition = camera.Position;
+		}
+		
 		window.clear(sf::Color::Black);
 
 		//std::cout << camera.rotZ << std::endl;	
@@ -397,14 +400,15 @@ int main()
 		{
 			render = true;
 			scale = 1;
-			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, target ,scale, render));
+			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera ,scale, render));
 			if (!render) continue;
 			//ent.sprite.setRotation();
+			
 			ent.sprite.setScale(scale,scale);
 			window.draw(ent.sprite);
 		}
 		//std::cout << camera.x << ":"  << camera.y<< std::endl;
-		player.sprite.setPosition(to_global(player.x, player.y,player.z, camera, target, scale,render));
+		player.sprite.setPosition(to_global(player.x, player.y, player.z, camera, scale, render));
 		//player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
 		player.sprite.setScale(1, 1);
 		window.draw(player.sprite);
