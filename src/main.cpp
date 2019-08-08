@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <math.h>
 
+#define  GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/transform.hpp"
@@ -9,7 +10,6 @@
 #include <iostream>
 
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE 1
 
 # define M_PI           3.14159265358979323846
 
@@ -19,7 +19,7 @@ const float YAW = -90.0f;
 const float PITCH = 0.0f;
 const float SPEED = 2.5f;
 const float SENSITIVITY = 0.5f;
-const float ZOOM = 90.0f;
+const float ZOOM = 30.0f;
 
 
 //NOTE : do depth testung with scaling, and a vector sort by overloading <
@@ -83,9 +83,9 @@ struct Camera
 	{
 		// Calculate the new Front vector
 		glm::vec3 posOffset;
-		posOffset.x = 1*sin(glm::radians(Yaw)) * sin(glm::radians(Pitch));
-		posOffset.y = 1*cos(glm::radians(Pitch)) * sin(glm::radians(Yaw));
-		posOffset.z = 1*cos(glm::radians(Yaw))  ;
+		posOffset.x = Zoom*sin(glm::radians(Yaw)) * sin(glm::radians(Pitch));
+		posOffset.y = Zoom*cos(glm::radians(Pitch)) * sin(glm::radians(Yaw));
+		posOffset.z = Zoom*cos(glm::radians(Yaw))  ;
 		
 		glm::vec3 front = glm::normalize(Position + posOffset);
 
@@ -122,12 +122,15 @@ struct Camera
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 	void ProcessMouseScroll(float yoffset)
 	{
-		if (Zoom >= 1.0f && Zoom <= 45.0f)
+		Zoom -= yoffset;
+
+
+	/*	if (Zoom >= 1.0f && Zoom <= 90.0f)
 			Zoom -= yoffset;
 		if (Zoom <= 1.0f)
 			Zoom = 1.0f;
-		if (Zoom >= 45.0f)
-			Zoom = 45.0f;
+		if (Zoom >= 90.0f)
+			Zoom = 90.0f;*/
 	}
 };
 
@@ -183,19 +186,10 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 	return list_entities;
 }
 
-sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target, float& scale)
+sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target, float& scale, bool& render)
 {
 	// x = x * 24  - cam.x ;
 	// y = y * 24  - cam.y ;
-
-		/*glm::mat4 mPerspective =
-	{
-		 S , 0 , 0 , 0,
-		 0 , S , 0 , 0,
-		 0 , 0 , -(far /(far - near)) ,-1 ,
-		 0 , 0 , -((far * near) / (far - near)) , 0
-	};
-	*/
 
 	/*
 	 glm::mat4 mRotationX =
@@ -221,26 +215,32 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target
 		 0 , 0 , 1 , 0,
 		 -cam.Position.x , -cam.Position.y , 0 , 1
 	 };
-
+	 glm::mat4 mPerspective =
+	{
+		 S*(800.0/600.0) , 0 , 0 , 0,
+		 0 , S , 0 , 0,
+		 0 , 0 , ((far +near) / (far - near)) ,1 ,
+		 0 , 0 ,( (2* far * near) / (near - far)) , 0
+	};
 
 	 */
 
 	
-	float fov =80.0f;
-	//double S = 1 / (glm::tan((fov / 2) * (M_PI / 180)));
+	float fov =75.0f;
+	double S = 1.0 / (glm::tan(fov / 2.0));
 	float near =  0.1f;
-	float far = 100.f;
+	float far = 10.f;
 	
 	glm::mat4 mScale =
 	{
 		 1 , 0, 0, 0,
 		 0 , 1, 0, 0,
 		 0 , 0, 1, 0,
-		 0 , 0, 0,  1
+		 0 , 0, 0, 1
 	};
 	
-	
-	glm::vec4 orig = { x, y, z ,1};
+	glm::vec3 orig = { x, y, z };
+
 	// calculate the model matrix for each object and pass  before drawing
 	 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
 	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(24.f));
@@ -257,23 +257,19 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target
 		{0,1,0} // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
-
-	//std::cout << "fin tar:" << tarPos3.x << " : " << tarPos3.y << " : " << tarPos3.z << std::endl;
 	auto mProjection = glm::perspective( glm::radians(fov), 800.f/ 600.f, near,far) ;
-
-	auto MVPmatric = mProjection * mView * model;
-
-	auto mFinal = MVPmatric * orig;
-	auto mAfterScale = mView * model * orig;
-	camPos = { camPos3.x, camPos3.y, camPos.z, 1 };
-	camPos3 = mView * camPos;
-	glm::vec3 mFinal3 = { mAfterScale.x, mAfterScale.y , mAfterScale.z };
-	scale = 1;  //glm::distance(camPos3, mFinal3);
-	//std::cout << "fin cam:" << camPos3.x << " : " << camPos3.y << " : " << camPos3.z << std::endl;
-	//float xp = view.x * cosf(cam.rotZ) - (view.y ) * sinf(cam.rotZ);
-	//float yp = (view.x ) * sinf(cam.rotZ) + (view.y ) * cosf(cam.rotZ);
-	//scale = { mFinal2.x - mFinal.x,mFinal2.y - mFinal.y };
-	sf::Vector2f vec(mFinal.x  +800/2, mFinal.y + 600 / 2);
+	auto mMV = mView * model;
+	//auto MVPmatric = mProjection * ;
+	//auto mFinal = MVPmatric * orig;
+	//mFinal /= mFinal.w;//perspective divide
+	glm::vec4 viewport = { 0.0 , 0.0, 800.0,600.0 };
+	auto mFinal = glm::project(orig, mMV, mProjection, viewport);
+	std::cout << mFinal.z << std::endl;
+	if (mFinal.z  < 1 || mFinal.z  > 2)
+	{
+		render = false;
+	}
+	sf::Vector2f vec(mFinal.x , mFinal.y);
 	return vec;
 }
 
@@ -361,26 +357,29 @@ int main()
 			}
 			if (event.type == sf::Event::MouseWheelScrolled)
 			{
-				//std::cout << "wheel movement: " <<  << std::endl
+				camera.ProcessMouseScroll(event.mouseWheelScroll.delta);
 			}
 		}
-		player.z = list.at(player.x + player.y * 18).z;
+		player.z = list.at(player.x + player.y * 18.0).z;
 		camera.Position = { player.x , player.y , player.z  };
 		camera.updateCameraVectors();
 		glm::vec3 target = { player.x , player.y , player.z };
 		window.clear(sf::Color::Black);
 
-		//std::cout << camera.rotZ << std::endl;		
+		//std::cout << camera.rotZ << std::endl;	
+		bool render = true;
 		for (Tile ent : list)
 		{
+			render = true;
 			scale = 1;
-			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, target ,scale));
+			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, target ,scale, render));
+			if (!render) continue;
 			//ent.sprite.setRotation(glm::radians(camera.Pitch));
 			ent.sprite.setScale(scale,scale);
 			window.draw(ent.sprite);
 		}
 		//std::cout << camera.x << ":"  << camera.y<< std::endl;
-		player.sprite.setPosition(to_global(player.x, player.y,player.z, camera, target, scale));
+		player.sprite.setPosition(to_global(player.x, player.y,player.z, camera, target, scale,render));
 		//player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
 		player.sprite.setScale(1, 1);
 		window.draw(player.sprite);
