@@ -2,10 +2,11 @@
 #include <stdint.h>
 #include <math.h>
 
-#define  GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define  GLM_FORCE_DEPTH_ZERO_TO_ONE 1
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
-#include "glm/gtx/transform.hpp"
+#include  "glm/ext/matrix_projection.hpp"
+
 
 #include <iostream>
 
@@ -90,7 +91,7 @@ struct Camera
 		glm::vec3 front = glm::normalize(Position + posOffset);
 
 		Position += posOffset;
-		std::cout << Position.x << " : " << Position.y  << " : "<< Position.z <<std::endl;
+		//std::cout << Position.x << " : " << Position.y  << " : "<< Position.z <<std::endl;
 
 		// Also re-calculate the Right and Up vector
 		Right = glm::normalize(glm::cross(front, WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
@@ -180,6 +181,7 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 							,sf::Sprite(texture, font.getGlyph(map[x + y * 18], 24, false).textureRect )
 			};
 			ent.sprite.setColor(sf::Color(250, 205, 195));
+			ent.sprite.setOrigin(11, 11);
 			list_entities.push_back(ent);
 		}
 	}
@@ -229,23 +231,23 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target
 	float fov =75.0f;
 	double S = 1.0 / (glm::tan(fov / 2.0));
 	float near =  0.1f;
-	float far = 10.f;
+	float far = 100.f;
 	
 	glm::mat4 mScale =
 	{
-		 1 , 0, 0, 0,
-		 0 , 1, 0, 0,
-		 0 , 0, 1, 0,
+		 24 , 0, 0, 0,
+		 0 , 24, 0, 0,
+		 0 , 0, 24, 0,
 		 0 , 0, 0, 1
 	};
 	
-	glm::vec3 orig = { x, y, z };
+	glm::vec4 orig = { x, y, z , 0};
 
 	// calculate the model matrix for each object and pass  before drawing
 	 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
-	glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(24.f));
-	glm::vec4 camPos = { cam.Position.x , cam.Position.y , cam.Position.z  , 1 };
-	glm::vec4 tarPos = { target.x , target.y , target.z  , 1};
+	glm::mat4 model = mScale;
+	glm::vec4 camPos = { cam.Position.x , cam.Position.y , cam.Position.z  , 0 };
+	glm::vec4 tarPos = { target.x , target.y , target.z  , 0};
 
 	
 	glm::vec3 camPos3 = model * camPos;
@@ -257,18 +259,40 @@ sf::Vector2f to_global(float x, float y , float z, Camera cam , glm::vec3 target
 		{0,1,0} // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
-	auto mProjection = glm::perspective( glm::radians(fov), 800.f/ 600.f, near,far) ;
-	auto mMV = mView * model;
+	//NO : z is Normalized  [-1 +1]
+	//ZO : z is normalied [0 +1]
+	auto mProjection = glm::perspectiveNO( glm::radians(fov), 800.f/600.f, near,far) ;
+	//auto mMV = mView * model;
 	//auto MVPmatric = mProjection * ;
 	//auto mFinal = MVPmatric * orig;
 	//mFinal /= mFinal.w;//perspective divide
 	glm::vec4 viewport = { 0.0 , 0.0, 800.0,600.0 };
-	auto mFinal = glm::project(orig, mMV, mProjection, viewport);
+	auto mFinal = mProjection*  mView * model * orig;
+
+	mFinal /= mFinal.w;
+
+	//std::cout << mFinal.z << std::endl;
+	//To do Z0 (NO par default) :  comment above and uncomment below
+	//mFinal.x = mFinal.x * 0.5 + 0.5;
+	//mFinal.y = mFinal.y * 0.5 + 0.5;
+	mFinal = mFinal * 0.5f + 0.5f;
 	std::cout << mFinal.z << std::endl;
-	if (mFinal.z  < 1 || mFinal.z  > 2)
+
+	mFinal[0] = mFinal[0] * viewport[2] + viewport[0];
+	mFinal[1] = mFinal[1] * viewport[3] + viewport[1];
+	if (mFinal.z > 1 || z < -1)
 	{
 		render = false;
+		return {};
 	}
+
+	//auto mFinal = glm::project(orig, mMV, mProjection, viewport);
+	const float epsi = 0.00001f;
+
+	/*if (mFinal.z - (1.0f - epsi) < 0|| mFinal.z -(1.0f - epsi) > 1)
+	{
+		render = false;
+	}*/
 	sf::Vector2f vec(mFinal.x , mFinal.y);
 	return vec;
 }
@@ -302,6 +326,7 @@ int main()
 		, 0
 		,sf::Sprite(texture, font.getGlyph('@', 24 , false).textureRect)
 	};
+	player.sprite.setOrigin(11, 11);
 	Camera camera = { };
 	camera.WorldUp = {0,1,0};
 	camera.Pitch = 0;
@@ -374,7 +399,7 @@ int main()
 			scale = 1;
 			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera, target ,scale, render));
 			if (!render) continue;
-			//ent.sprite.setRotation(glm::radians(camera.Pitch));
+			//ent.sprite.setRotation();
 			ent.sprite.setScale(scale,scale);
 			window.draw(ent.sprite);
 		}
