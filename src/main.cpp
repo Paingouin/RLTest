@@ -165,7 +165,7 @@ struct Camera
 
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
-		 mProjection = glm::perspectiveRH_NO(glm::radians(fov), 800.f /600.f, near, far);
+		 mProjection = glm::perspectiveRH_ZO(glm::radians(fov), 800.f /600.f, near, far);
 		
 	}
 
@@ -244,7 +244,7 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 							map[x + y * 18]
 							, x 
 							, 17-y 
-							, ((x>3 && map[x + y * 18] == '+') ? ((x-3)*0.1) : 0)
+							, ((x>3 && map[x + y * 18] == '+') ? ((x-3)*0.6) : 0)
 							, 0.f
 							, 1.f
 							,sf::Sprite(texture, font.getGlyph(map[x + y * 18], 24, false).textureRect )
@@ -291,7 +291,7 @@ int main()
 	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
-	window.setFramerateLimit(60);
+	//window.setFramerateLimit(60);
 
 
 	sf::Font font;
@@ -316,6 +316,7 @@ int main()
 	player.sprite.setOrigin(11, 11);
 	Camera camera = { };
 	camera.WorldUp = {0.f,0.f,1.f};
+	camera.LastPosition = {-1,-1,-1};
 	camera.Pitch = -90.f;
 	camera.Yaw = 45.f;
 	camera.Front = { 0.f,0.f,0.f };
@@ -323,10 +324,13 @@ int main()
 	camera.MouseSensitivity = SENSITIVITY;
 	camera.Zoom = ZOOM;
 	// run the program as long as the window is open
+	sf::Clock clock;
+	float lastTime = 0;
 	while (window.isOpen())
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
+		bool moved = false;
 		while (window.pollEvent(event))
 		{
 			// "close requested" event: we close the window
@@ -335,18 +339,22 @@ int main()
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
 				player.x -= 1.f;
+				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
 				player.x += 1.f;
+				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
 				player.y += 1.f;
+				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
 				player.y -= 1.f;
+				moved = true;
 			}
 
 			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
@@ -366,19 +374,21 @@ int main()
 				lastY = event.mouseMove.y;
 
 				camera.ProcessMouseMovement(xoffset, yoffset);
+				moved = true;
 			}
 			if (event.type == sf::Event::MouseWheelScrolled)
 			{
 				camera.ProcessMouseScroll(event.mouseWheelScroll.delta);
+				moved = true;
 			}
 		}
-		player.z = list.at(player.x + player.y * 18).z;
+		player.z = list.at( player.x + player.y * 18).z;
 		camera.Position = { player.x , player.y  , player.z  };
 		glm::vec3 target = { player.x , player.y , player.z };
-		if (camera.Position != camera.LastPosition)
+
+		if (moved)
 		{
 			camera.updateCameraVectors(target);
-			camera.LastPosition = camera.Position;
 		}
 		
 		window.clear(sf::Color::Black);
@@ -412,6 +422,7 @@ int main()
 		window.draw(player.sprite);
 
 		window.display();
+
 	}
 
 	return 0;
