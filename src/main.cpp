@@ -22,6 +22,7 @@ const float ZOOM = 30.0f;
 
 
 //NOTE : do depth testung with scaling, and a vector sort by overloading <
+//Todo : vertex array for sprite bashing
 
 //"angle" of the keypress, subtract the camera Z rotation, find the nearest matching direction
 
@@ -166,7 +167,7 @@ struct Camera
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
 		 mProjection = glm::perspectiveRH_ZO(glm::radians(fov), 800.f /600.f, near, far);
-		
+		 mProjection = mProjection * mView * model;
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -257,10 +258,10 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 	return list_entities;
 }
 
-sf::Vector2f to_global(float x, float y , float z, Camera cam , float& scale, bool& render)
+sf::Vector2f to_global(float x, float y , float z, Camera& cam , float& scale, bool& render)
 {
 	glm::vec4 orig = { x, y, z , 1.f	 };
-	glm::vec4 mFinal = cam.mProjection *  cam.mView * cam.model * orig;
+	glm::vec4 mFinal = cam.mProjection  * orig;
 	mFinal /= mFinal.w;
 	//std::cout << mFinal.z << std::endl;
 	//std::cout << mFinal.x << " : " << mFinal.y << std::endl;
@@ -291,7 +292,7 @@ int main()
 	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
-	//window.setFramerateLimit(60);
+	window.setFramerateLimit(60);
 
 
 	sf::Font font;
@@ -324,8 +325,7 @@ int main()
 	camera.MouseSensitivity = SENSITIVITY;
 	camera.Zoom = ZOOM;
 	// run the program as long as the window is open
-	sf::Clock clock;
-	float lastTime = 0;
+
 	while (window.isOpen())
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
@@ -403,19 +403,19 @@ int main()
 		window.draw(lines);
 		//std::cout << camera.rotZ << std::endl;	
 		bool render = true;
+		int nb = 0;
 		for (Tile ent : list)
 		{
 			render = true;
 			scale = 1;
 			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera ,scale, render));
 			if (!render) continue;
-			ent.sprite.setRotation(camera.Pitch + 90.f);
-			
+			ent.sprite.setRotation(camera.Pitch + 90.f);	
 			ent.sprite.setScale(scale,scale);
 			window.draw(ent.sprite);
-
+			nb++;
 		}
-		//std::cout << camera.x << ":"  << camera.y<< std::endl;
+		//std::cout << nb + 1 << ":" << std::endl;
 		player.sprite.setPosition(to_global(player.x, player.y, player.z, camera, scale, render));
 		player.sprite.setRotation(camera.Pitch + 90.f);
 		player.sprite.setScale(1, 1);
