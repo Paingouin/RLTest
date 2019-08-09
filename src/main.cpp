@@ -2,9 +2,12 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include  "glm/ext/matrix_projection.hpp"
+#include "glm/vec3.hpp" // glm::vec3
+#include "glm/vec4.hpp" // glm::vec4
+#include "glm/mat4x4.hpp" // glm::mat4
+#include "glm/ext/matrix_transform.hpp" // glm::translate, glm::rotate, glm::scale
+#include "glm/ext/matrix_clip_space.hpp" // glm::perspective
+
 
 
 #include <iostream>
@@ -40,7 +43,7 @@ struct Tile
 {
 	char glyph;
 
-	int32 x, y, z;
+	float x, y, z;
 	int32 color;
 	float scaleFactor;
 	sf::Sprite sprite;
@@ -52,7 +55,7 @@ struct Player
 {
 	char glyph;
 
-	int32 x, y, z;
+	float x, y, z;
 	int32 color;
 	sf::Sprite sprite;
 };
@@ -78,15 +81,15 @@ struct Camera
 	glm::mat4 model;
 	glm::mat4 mView;
 	glm::mat4 mProjection;
-	glm::vec4 viewport = { 0.0 , 0.0, 800.0,600.0 };
+	glm::vec4 viewport = { 0.0f , 0.0f, 800.0f,600.0f };
 
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors(glm::vec3 target)
 	{
 		// Calculate the new Front vector
 		glm::vec3 posOffset;
-		posOffset.x = Zoom*sin(glm::radians(Yaw)) * sin(glm::radians(Pitch));
-		posOffset.y = Zoom*cos(glm::radians(Pitch)) * sin(glm::radians(Yaw));
+		posOffset.x = Zoom*sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
+		posOffset.y = Zoom*sin(glm::radians(Pitch)) * sin(glm::radians(Yaw));
 		posOffset.z = Zoom*cos(glm::radians(Yaw))  ;
 
 		Position += posOffset;
@@ -138,17 +141,17 @@ struct Camera
 
 		glm::mat4 mScale =
 		{
-			 1 , 0, 0, 0,
-			 0 , 1, 0, 0,
-			 0 , 0, 1, 0,
-			 0 , 0, 0, 1
+			 1.f , 0.f, 0.f, 0.f,
+			 0.f , 1.f, 0.f, 0.f,
+			 0.f , 0.f, 1.f, 0.f,
+			 0.f , 0.f, 0.f, 1.f
 		};
 
 		// calculate the model matrix for each object and pass  before drawing
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
 		model = mScale;
-		glm::vec4 camPos = { Position.x , Position.y +1 , Position.z  , -1 };
-		glm::vec4 tarPos = { target.x , target.y , target.z  , 1 };
+		glm::vec4 camPos = { Position.x , Position.y , Position.z  , 1.f };
+		glm::vec4 tarPos = { target.x , target.y , target.z  , 1.f };
 
 
 		glm::vec3 camPos3 = model * camPos;
@@ -157,12 +160,12 @@ struct Camera
 		mView = glm::lookAtRH(
 			camPos3, // Camera in World Space  
 			tarPos3, // and looks at the target
-			{ 0, 0, -1}// Head is up (set to 0,-1,0 to look upside-down)
+			{ 0.f, 0.f, 1.f}// Head is up (set to 0,-1,0 to look upside-down)
 		);
 
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
-		 mProjection = glm::perspectiveFovRH_NO(glm::radians(fov), 800.f , 600.f, near, far);
+		 mProjection = glm::perspectiveRH_NO(glm::radians(fov), 800.f /600.f, near, far);
 		
 	}
 
@@ -171,7 +174,8 @@ struct Camera
 	{
 		xoffset *= MouseSensitivity;
 		yoffset *= MouseSensitivity;
-
+		
+		//std::cout << xoffset << std::endl;
 		Yaw += yoffset;
 		Pitch -= xoffset;
 
@@ -180,8 +184,8 @@ struct Camera
 		{
 			if (Yaw > 89.0f)
 				Yaw = 89.0f;
-			if (Yaw < 1)
-				Yaw = 1;
+			if (Yaw < 1.f)
+				Yaw = 1.f;
 		}
 	}
 
@@ -208,15 +212,15 @@ struct Controller
 
 char map[18 * 18] = {
 	'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','9','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','8','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','7','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','6','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','7','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','4','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','3','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','2','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
+	'#','1','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
 	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
 	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
 	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
@@ -232,17 +236,17 @@ char map[18 * 18] = {
 std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char* map)
 {
 	std::vector<Tile> list_entities;
-	for (int y = 17; y >= 0; --y)
+	for (int y = 0; y < 18; y++)
 	{
 		for (int x = 0; x < 18; ++x)
 		{
 			Tile ent = {
 							map[x + y * 18]
 							, x 
-							, y 
-							, ((x>3 && map[x + y * 18] == '+') ? ((x-3)) : 0)
-							, 0
-							, 1
+							, 17-y 
+							, ((x>3 && map[x + y * 18] == '+') ? ((x-3)*0.1) : 0)
+							, 0.f
+							, 1.f
 							,sf::Sprite(texture, font.getGlyph(map[x + y * 18], 24, false).textureRect )
 			};
 			ent.sprite.setColor(sf::Color(250, 205, 195));
@@ -255,30 +259,28 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 
 sf::Vector2f to_global(float x, float y , float z, Camera cam , float& scale, bool& render)
 {
-	glm::vec4 orig = { x, y, z , 1	 };
-	auto mFinal =  cam.mView * cam.model * orig;
-
-	//std::cout << mFinal.z << std::endl;
-	mFinal = cam.mProjection * mFinal;
-
+	glm::vec4 orig = { x, y, z , 1.f	 };
+	glm::vec4 mFinal = cam.mProjection *  cam.mView * cam.model * orig;
 	mFinal /= mFinal.w;
 	//std::cout << mFinal.z << std::endl;
-
 	//std::cout << mFinal.x << " : " << mFinal.y << std::endl;
 	mFinal = mFinal * 0.5f + 0.5f;
 	//To do Z0(0,1) (NO par default) :  comment above and uncomment below
 	//mFinal.x = mFinal.x * 0.5 + 0.5;
 	//mFinal.y = mFinal.y * 0.5 + 0.5;
 
-	mFinal.x = mFinal.x * cam.viewport[2] + cam.viewport[0];
-	mFinal.y = mFinal.y * cam.viewport[3] + cam.viewport[1];
-	std::cout << mFinal.z << std::endl;
+	mFinal.x =( mFinal.x * cam.viewport[2]) + cam.viewport[0];
+	mFinal.y =(cam.viewport[3] - (mFinal.y * cam.viewport[3])) + cam.viewport[1];
+
+	//mFinal.z = ((100.f - 0.1f) / 2.0f) * mFinal.z + ((100.f + 0.1f) / 2.0f);
+	//std::cout << mFinal.z << std::endl;
 	if (mFinal.z < -1|| mFinal.z > 1) //culling
 	{
 		render = false;
 	}
 	sf::Vector2f vec(mFinal.x , mFinal.y);
 	//scale = 100.0 - (mFinal.z*100 / 2.0);
+	
 	return vec;
 }
 
@@ -313,10 +315,10 @@ int main()
 	};
 	player.sprite.setOrigin(11, 11);
 	Camera camera = { };
-	camera.WorldUp = {0,1,0};
-	camera.Pitch = 0;
-	camera.Yaw = 0.f;
-	camera.Front = { 0,0,0 };
+	camera.WorldUp = {0.f,0.f,1.f};
+	camera.Pitch = -90.f;
+	camera.Yaw = 45.f;
+	camera.Front = { 0.f,0.f,0.f };
 	camera.MovementSpeed = SPEED;
 	camera.MouseSensitivity = SENSITIVITY;
 	camera.Zoom = ZOOM;
@@ -332,19 +334,19 @@ int main()
 				window.close();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				player.x -= 1;
+				player.x -= 1.f;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				player.x += 1;
+				player.x += 1.f;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
-				player.y -= 1;
+				player.y += 1.f;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
-				player.y += 1;
+				player.y -= 1.f;
 			}
 
 			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
@@ -370,8 +372,8 @@ int main()
 				camera.ProcessMouseScroll(event.mouseWheelScroll.delta);
 			}
 		}
-		player.z = list.at(player.x + player.y * 18.0).z;
-		camera.Position = { player.x , player.y , player.z  };
+		player.z = list.at(player.x + player.y * 18).z;
+		camera.Position = { player.x , player.y  , player.z  };
 		glm::vec3 target = { player.x , player.y , player.z };
 		if (camera.Position != camera.LastPosition)
 		{
@@ -380,7 +382,15 @@ int main()
 		}
 		
 		window.clear(sf::Color::Black);
+		sf::VertexArray lines(sf::LinesStrip, 2);
+		lines[0].position = sf::Vector2f(400, 0);
+		lines[1].position = sf::Vector2f(400, 600);
 
+		window.draw(lines);
+
+		lines[0].position = sf::Vector2f(0, 300);
+		lines[1].position = sf::Vector2f(800, 300);
+		window.draw(lines);
 		//std::cout << camera.rotZ << std::endl;	
 		bool render = true;
 		for (Tile ent : list)
@@ -389,7 +399,7 @@ int main()
 			scale = 1;
 			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera ,scale, render));
 			if (!render) continue;
-			ent.sprite.setRotation(camera.Pitch);
+			ent.sprite.setRotation(camera.Pitch + 90.f);
 			
 			ent.sprite.setScale(scale,scale);
 			window.draw(ent.sprite);
@@ -397,7 +407,7 @@ int main()
 		}
 		//std::cout << camera.x << ":"  << camera.y<< std::endl;
 		player.sprite.setPosition(to_global(player.x, player.y, player.z, camera, scale, render));
-		player.sprite.setRotation(camera.Pitch);
+		player.sprite.setRotation(camera.Pitch + 90.f);
 		player.sprite.setScale(1, 1);
 		window.draw(player.sprite);
 
