@@ -2,17 +2,12 @@
 #include <stdint.h>
 #include <math.h>
 
-#define  GLM_FORCE_DEPTH_ZERO_TO_ONE 1
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include  "glm/ext/matrix_projection.hpp"
 
 
 #include <iostream>
-
-
-
-# define M_PI           3.14159265358979323846
 
 int PERSPECTIVE = 800 * 0.8;
 
@@ -93,15 +88,9 @@ struct Camera
 		posOffset.x = Zoom*sin(glm::radians(Yaw)) * sin(glm::radians(Pitch));
 		posOffset.y = Zoom*cos(glm::radians(Pitch)) * sin(glm::radians(Yaw));
 		posOffset.z = Zoom*cos(glm::radians(Yaw))  ;
-		
-		glm::vec3 front = glm::normalize(Position + posOffset);
 
 		Position += posOffset;
-		//std::cout << Position.x << " : " << Position.y  << " : "<< Position.z <<std::endl;
 
-		// Also re-calculate the Right and Up vector
-		Right = glm::normalize(glm::cross(front, WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-		Up = glm::normalize(glm::cross(Right, front));
 
 		// x = x * 24  - cam.x ;
 	// y = y * 24  - cam.y ;
@@ -144,59 +133,56 @@ struct Camera
 		float fov = 75.0f;
 		//double S = 1.0 / (glm::tan(fov / 2.0));
 		float near = 0.1f;
-		float far = 1000.f;
+		float far = 100.f;
 
 
 		glm::mat4 mScale =
 		{
-			 24 , 0, 0, 0,
-			 0 , 24, 0, 0,
-			 0 , 0, 24, 0,
+			 1 , 0, 0, 0,
+			 0 , 1, 0, 0,
+			 0 , 0, 1, 0,
 			 0 , 0, 0, 1
 		};
 
 		// calculate the model matrix for each object and pass  before drawing
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
 		model = mScale;
-		glm::vec4 camPos = { Position.x , Position.y , Position.z  , 1 };
+		glm::vec4 camPos = { Position.x , Position.y +1 , Position.z  , -1 };
 		glm::vec4 tarPos = { target.x , target.y , target.z  , 1 };
 
 
 		glm::vec3 camPos3 = model * camPos;
 		glm::vec3 tarPos3 = model * tarPos;
 		//std::cout << "before cam:" << camPos3.x << " : " << camPos3.y << " : " << camPos3.z << std::endl;
-		mView = glm::lookAt(
+		mView = glm::lookAtRH(
 			camPos3, // Camera in World Space  
 			tarPos3, // and looks at the target
-			{ 0,1,0 } // Head is up (set to 0,-1,0 to look upside-down)
+			{ 0, 0, -1}// Head is up (set to 0,-1,0 to look upside-down)
 		);
 
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
-		 mProjection = glm::perspectiveRH_ZO(glm::radians(fov), 800.f / 600.f, near, far);
+		 mProjection = glm::perspectiveFovRH_NO(glm::radians(fov), 800.f , 600.f, near, far);
 		
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = false)
+	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true)
 	{
 		xoffset *= MouseSensitivity;
 		yoffset *= MouseSensitivity;
 
 		Yaw += yoffset;
-		Pitch += xoffset;
+		Pitch -= xoffset;
 
 		// Make sure that when pitch is out of bounds, screen doesn't get flipped
 		if (constrainPitch)
 		{
 			if (Yaw > 89.0f)
 				Yaw = 89.0f;
-			if (Yaw < 0)
-				Yaw = 0;
+			if (Yaw < 1)
+				Yaw = 1;
 		}
-
-		// Update Front, Right and Up Vectors using the updated Euler angles
-
 	}
 
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
@@ -269,20 +255,24 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 
 sf::Vector2f to_global(float x, float y , float z, Camera cam , float& scale, bool& render)
 {
-	glm::vec4 orig = { x, y, z , 1 };
-	auto mFinal = cam.mProjection * cam.mView * cam.model * orig;
+	glm::vec4 orig = { x, y, z , 1	 };
+	auto mFinal =  cam.mView * cam.model * orig;
+
+	//std::cout << mFinal.z << std::endl;
+	mFinal = cam.mProjection * mFinal;
+
 	mFinal /= mFinal.w;
 	//std::cout << mFinal.z << std::endl;
-	//To do Z0 (NO par default) :  comment above and uncomment below
-	mFinal.x = mFinal.x * 0.5 + 0.5;
-	mFinal.y = mFinal.y * 0.5 + 0.5;
-	//mFinal = mFinal * 0.5f + 0.5f;
-	
+
+	//std::cout << mFinal.x << " : " << mFinal.y << std::endl;
+	mFinal = mFinal * 0.5f + 0.5f;
+	//To do Z0(0,1) (NO par default) :  comment above and uncomment below
+	//mFinal.x = mFinal.x * 0.5 + 0.5;
+	//mFinal.y = mFinal.y * 0.5 + 0.5;
+
+	mFinal.x = mFinal.x * cam.viewport[2] + cam.viewport[0];
+	mFinal.y = mFinal.y * cam.viewport[3] + cam.viewport[1];
 	std::cout << mFinal.z << std::endl;
-	mFinal[0] = mFinal[0] * cam.viewport[2] + cam.viewport[0];
-	mFinal[1] = mFinal[1] * cam.viewport[3] + cam.viewport[1];
-
-
 	if (mFinal.z < -1|| mFinal.z > 1) //culling
 	{
 		render = false;
@@ -399,14 +389,15 @@ int main()
 			scale = 1;
 			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera ,scale, render));
 			if (!render) continue;
-			//ent.sprite.setRotation();
+			ent.sprite.setRotation(camera.Pitch);
 			
 			ent.sprite.setScale(scale,scale);
 			window.draw(ent.sprite);
+
 		}
 		//std::cout << camera.x << ":"  << camera.y<< std::endl;
 		player.sprite.setPosition(to_global(player.x, player.y, player.z, camera, scale, render));
-		//player.sprite.setRotation(camera.rotZ * (180.f / M_PI));
+		player.sprite.setRotation(camera.Pitch);
 		player.sprite.setScale(1, 1);
 		window.draw(player.sprite);
 
