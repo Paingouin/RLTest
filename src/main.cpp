@@ -18,7 +18,7 @@ const float YAW = -90.0f;
 const float PITCH = 0.0f;
 const float SPEED = 2.5f;
 const float SENSITIVITY = 0.5f;
-const float ZOOM = 30.0f;
+const float ZOOM = 10.0f;
 
 
 //NOTE : do depth testung with scaling, and a vector sort by overloading <
@@ -79,6 +79,11 @@ struct Camera
 	float MouseSensitivity;
 	float Zoom;
 
+	float fov = 75.0f;
+	//double S = 1.0 / (glm::tan(fov / 2.0));
+	float near = 1.f;
+	float far = 100.f;
+
 	glm::mat4 model;
 	glm::mat4 mView;
 	glm::mat4 mProjection;
@@ -134,10 +139,7 @@ struct Camera
 	 */
 
 
-		float fov = 75.0f;
-		//double S = 1.0 / (glm::tan(fov / 2.0));
-		float near = 0.1f;
-		float far = 100.f;
+
 
 
 		glm::mat4 mScale =
@@ -166,7 +168,7 @@ struct Camera
 
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
-		 mProjection = glm::perspectiveRH_ZO(glm::radians(fov), 800.f /600.f, near, far);
+		 mProjection = glm::perspectiveRH_NO(glm::radians(fov), 800.f /600.f, near, far);
 		 mProjection = mProjection * mView * model;
 	}
 
@@ -248,10 +250,10 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 							, ((x>3 && map[x + y * 18] == '+') ? ((x-3)*0.6) : 0)
 							, 0.f
 							, 1.f
-							,sf::Sprite(texture, font.getGlyph(map[x + y * 18], 24, false).textureRect )
+							,sf::Sprite(texture, font.getGlyph(map[x + y * 18], 48, false).textureRect )
 			};
 			ent.sprite.setColor(sf::Color(250, 205, 195));
-			ent.sprite.setOrigin(11, 11);
+			ent.sprite.setOrigin(20, 20);
 			list_entities.push_back(ent);
 		}
 	}
@@ -262,9 +264,17 @@ sf::Vector2f to_global(float x, float y , float z, Camera& cam , float& scale, b
 {
 	glm::vec4 orig = { x, y, z , 1.f	 };
 	glm::vec4 mFinal = cam.mProjection  * orig;
-	mFinal /= mFinal.w;
-	//std::cout << mFinal.z << std::endl;
-	//std::cout << mFinal.x << " : " << mFinal.y << std::endl;
+	float distance = mFinal.w;
+	mFinal.x /= mFinal.w;
+	mFinal.y /= mFinal.w;
+	mFinal.z = glm::abs(mFinal.z) / mFinal.w;
+	if (mFinal.z < -0.9|| mFinal.z > 1) //culling
+	{
+		render = false;
+		return sf::Vector2f();
+	}
+	
+	scale = (((6 * 0.8 * (800.f / 600.f)) / distance) * (800.f / 600.f));
 	mFinal = mFinal * 0.5f + 0.5f;
 	//To do Z0(0,1) (NO par default) :  comment above and uncomment below
 	//mFinal.x = mFinal.x * 0.5 + 0.5;
@@ -274,14 +284,8 @@ sf::Vector2f to_global(float x, float y , float z, Camera& cam , float& scale, b
 	mFinal.y =(cam.viewport[3] - (mFinal.y * cam.viewport[3])) + cam.viewport[1];
 
 	//mFinal.z = ((100.f - 0.1f) / 2.0f) * mFinal.z + ((100.f + 0.1f) / 2.0f);
-	//std::cout << mFinal.z << std::endl;
-	if (mFinal.z < -1|| mFinal.z > 1) //culling
-	{
-		render = false;
-	}
+
 	sf::Vector2f vec(mFinal.x , mFinal.y);
-	//scale = 100.0 - (mFinal.z*100 / 2.0);
-	
 	return vec;
 }
 
@@ -301,7 +305,7 @@ int main()
 		// error...
 	}
 
-	const sf::Texture& texture = font.getTexture(24 );
+	const sf::Texture& texture = font.getTexture(48 );
 	std::vector<Tile> list = gensprite_map(font, texture, map);
 	Controller control = {};
 	
@@ -312,9 +316,9 @@ int main()
 		, 6 
 		, 0
 		, 0
-		,sf::Sprite(texture, font.getGlyph('@', 24 , false).textureRect)
+		,sf::Sprite(texture, font.getGlyph('@', 48 , false).textureRect)
 	};
-	player.sprite.setOrigin(11, 11);
+	player.sprite.setOrigin(20, 20);
 	Camera camera = { };
 	camera.WorldUp = {0.f,0.f,1.f};
 	camera.LastPosition = {-1,-1,-1};
@@ -326,11 +330,11 @@ int main()
 	camera.Zoom = ZOOM;
 	// run the program as long as the window is open
 
+	bool moved = true;
 	while (window.isOpen())
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
-		bool moved = false;
 		while (window.pollEvent(event))
 		{
 			// "close requested" event: we close the window
@@ -382,13 +386,14 @@ int main()
 				moved = true;
 			}
 		}
-		player.z = list.at( player.x + player.y * 18).z;
-		camera.Position = { player.x , player.y  , player.z  };
-		glm::vec3 target = { player.x , player.y , player.z };
 
+		player.z = list.at(player.x + player.y * 18).z;
+		glm::vec3 target = { player.x , player.y , player.z };
 		if (moved)
 		{
+			camera.Position = { player.x , player.y  , player.z };
 			camera.updateCameraVectors(target);
+			moved = false;
 		}
 		
 		window.clear(sf::Color::Black);
@@ -407,18 +412,18 @@ int main()
 		for (Tile ent : list)
 		{
 			render = true;
-			scale = 1;
-			ent.sprite.setPosition(to_global(ent.x,ent.y, ent.z,camera ,scale, render));
+			ent.sprite.setPosition(to_global(ent.x, ent.y, ent.z, camera, scale, render));
 			if (!render) continue;
-			ent.sprite.setRotation(camera.Pitch + 90.f);	
+
+			ent.sprite.setRotation(camera.Pitch + 180.f);	
 			ent.sprite.setScale(scale,scale);
 			window.draw(ent.sprite);
 			nb++;
 		}
-		//std::cout << nb + 1 << ":" << std::endl;
 		player.sprite.setPosition(to_global(player.x, player.y, player.z, camera, scale, render));
-		player.sprite.setRotation(camera.Pitch + 90.f);
-		player.sprite.setScale(1, 1);
+		player.sprite.setRotation(camera.Pitch + 180.f);
+	
+		player.sprite.setScale(scale, scale);
 		window.draw(player.sprite);
 
 		window.display();
