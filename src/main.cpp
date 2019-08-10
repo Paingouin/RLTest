@@ -66,10 +66,6 @@ struct Camera
 	// Camera Attributes
 	glm::vec3 Position;
 	glm::vec3 LastPosition;
-	glm::vec3 Front;
-	glm::vec3 Up;
-	glm::vec3 Right;
-	glm::vec3 WorldUp;
 
 	// Euler Angles
 	float Yaw;
@@ -79,7 +75,7 @@ struct Camera
 	float MouseSensitivity;
 	float Zoom;
 
-	float fov = 75.0f;
+	float fov = 70.0f;
 	//double S = 1.0 / (glm::tan(fov / 2.0));
 	float near = 1.f;
 	float far = 100.f;
@@ -99,7 +95,6 @@ struct Camera
 		posOffset.z = Zoom*cos(glm::radians(Yaw))  ;
 
 		Position += posOffset;
-
 
 		// x = x * 24  - cam.x ;
 	// y = y * 24  - cam.y ;
@@ -137,11 +132,6 @@ struct Camera
 	};
 
 	 */
-
-
-
-
-
 		glm::mat4 mScale =
 		{
 			 1.f , 0.f, 0.f, 0.f,
@@ -268,7 +258,7 @@ sf::Vector2f to_global(float x, float y , float z, Camera& cam , float& scale, b
 	mFinal.x /= mFinal.w;
 	mFinal.y /= mFinal.w;
 	mFinal.z = glm::abs(mFinal.z) / mFinal.w;
-	if (mFinal.z < -0.9|| mFinal.z > 1) //culling
+	if (mFinal.z < -1|| mFinal.z > 1) //culling
 	{
 		render = false;
 		return sf::Vector2f();
@@ -283,9 +273,7 @@ sf::Vector2f to_global(float x, float y , float z, Camera& cam , float& scale, b
 	mFinal.x =( mFinal.x * cam.viewport[2]) + cam.viewport[0];
 	mFinal.y =(cam.viewport[3] - (mFinal.y * cam.viewport[3])) + cam.viewport[1];
 
-	//mFinal.z = ((100.f - 0.1f) / 2.0f) * mFinal.z + ((100.f + 0.1f) / 2.0f);
-
-	sf::Vector2f vec(mFinal.x , mFinal.y);
+	sf::Vector2f vec(mFinal.x , mFinal.y);//return final position
 	return vec;
 }
 
@@ -320,11 +308,9 @@ int main()
 	};
 	player.sprite.setOrigin(20, 20);
 	Camera camera = { };
-	camera.WorldUp = {0.f,0.f,1.f};
 	camera.LastPosition = {-1,-1,-1};
 	camera.Pitch = -90.f;
 	camera.Yaw = 45.f;
-	camera.Front = { 0.f,0.f,0.f };
 	camera.MovementSpeed = SPEED;
 	camera.MouseSensitivity = SENSITIVITY;
 	camera.Zoom = ZOOM;
