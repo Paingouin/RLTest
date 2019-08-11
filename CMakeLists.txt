@@ -21,11 +21,11 @@ project(RLTest)
 
 
 add_executable(RLTestBin 
-			./include/Console.h
+		    ./include/Camera.h
 			./include/main.h
 			./include/stb_image.h
 
-			./src/Console.cpp
+			./src/Camera.cpp
 			./src/main.cpp		
 			)
 
