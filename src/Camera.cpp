@@ -52,6 +52,7 @@ struct Camera
 			 0.f , 0.f, 0.f, 1.f
 		};
 
+		//https://gamedev.stackexchange.com/questions/54391/scaling-point-sprites-with-distance/65770#65770
 		heightOfNearPlane = ((float)abs(viewport[3] - viewport[1]) /
 			(2 * tan(0.5 * fov * glm::pi<float>() / 180.0)));
 
@@ -123,8 +124,7 @@ struct Camera
 		mFinal.x /= mFinal.w;
 		mFinal.y /= mFinal.w;
 		mFinal.z /= mFinal.w;//mFinal.z = glm::abs(mFinal.z) / mFinal.w;
-		//scale = 7.f * (1.f/ distance);
-		//scale = (((6.f * 0.8f * (viewport[2] / viewport[3])) / distance) * (viewport[2] / viewport[3]));  https://gamedev.stackexchange.com/questions/54391/scaling-point-sprites-with-distance/65770#65770
+		  
 		scale = heightOfNearPlane * 0.02f / distance;
 		
 		if (mFinal.z < -1.f || mFinal.z > 1.f) //culling
