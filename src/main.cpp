@@ -1,12 +1,5 @@
-#include <SFML/Graphics.hpp>
-#include <stdint.h>
-#include <math.h>
-#include <iostream>
-#include <algorithm>
 
-#include "Camera.h"
-
-
+#include "Camera.cpp"
 
 struct GameConfig
 {
@@ -34,17 +27,6 @@ struct GameConfig
 
 //"angle" of the keypress, subtract the camera Z rotation, find the nearest matching direction
 
-typedef unsigned char asciiChar;
-
-typedef uint8_t		uint8;
-typedef uint32_t	uint32;
-typedef uint64_t	uint64;
-typedef int32_t		int32;
-typedef int64_t		int64;
-
-#define internal static
-#define local_persist static
-#define global_variable static
 
 struct Tile
 {
@@ -237,11 +219,14 @@ int main()
 		{
 			camera.Position = { player.x , player.y  , player.z };
 			camera.updateCameraVectors(target);
+		
 			moved = false;
 		}
 
 		//PRE-RENDERING
 		window.clear(sf::Color::Black);
+		//genSpriteMap based on fov
+		list = gensprite_map(font, texture, map);
 		//Z-sorting
 		for (Tile& ent : list)
 		{ 

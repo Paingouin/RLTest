@@ -3,8 +3,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string>
+#include <iostream>
+#include <algorithm>
 
-typedef unsigned char asciiChar;
+#include <SFML/Graphics.hpp>
+
+
+// Include the STB image library - only the PNG support
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#include "stb_image.h"
 
 typedef uint8_t		uint8;
 typedef uint32_t	uint32;
@@ -16,11 +24,15 @@ typedef int64_t		int64;
 #define local_persist static
 #define global_variable static
 
-// Include the STB image library - only the PNG support
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
-#include "stb_image.h"
 /*
+typedef unsigned char asciiChar;
+
+
+*/
+
+
+/*
+
  unsigned char *imgData = stbi_load(filename,
 									&imgWidth, &imgHeight,
 									&numComponents, STBI_rgb_alpha);
@@ -29,6 +41,10 @@ typedef int64_t		int64;
 	do a malloc, get all data on memory and free
 
 stbi_image_free(imgData);
+
+
+
+
 
 */
 

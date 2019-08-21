@@ -19,15 +19,21 @@ message(STATUS "Build Type ............. ${CMAKE_BUILD_TYPE}")
 
 project(RLTest)
 
-
-add_executable(RLTestBin 
-		    ./include/Camera.h
+set (SOURCE_FILE 	        
 			./include/main.h
 			./include/stb_image.h
 
 			./src/Camera.cpp
+		   )
+
+add_executable(RLTestBin 
+	        ${SOURCE_FILE}
 			./src/main.cpp		
 			)
+
+set_source_files_properties( 
+	        ${SOURCE_FILE}
+			PROPERTIES HEADER_FILE_ONLY TRUE)
 
 
 set_target_properties( RLTestBin
@@ -36,8 +42,6 @@ set_target_properties( RLTestBin
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
-
-
 
 include(build_options)
 include(build_dependencies)
