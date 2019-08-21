@@ -6,14 +6,23 @@
 
 #include "Camera.h"
 
-const float YAW = -90.0f;
-const float PITCH = 0.0f;
-const float SPEED = 2.5f;
-const float SENSITIVITY = 0.5f;
-const float ZOOM = 10.0f;
 
-//TODO :	
-//		resize : struct GameConfig(taille ecran, global state)
+
+struct GameConfig
+{
+	const float YAW = -90.0f;
+	const float PITCH = 0.0f;
+	const float SPEED = 2.5f;
+	const float SENSITIVITY = 0.5f;
+	const float ZOOM = 10.0f;
+
+	int winWidth = 800;
+	int winHeight = 600;
+
+};
+
+//TODO :
+//		refactor tile entity
 //      light attenuation
 //      
 //		Control angle of view
@@ -49,9 +58,6 @@ struct Tile
 	sf::Sprite sprite;
 
 };
-
-
-
 typedef Tile Player;
 
 
@@ -112,8 +118,10 @@ std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char
 
 int main()
 {
-	sf::RenderWindow  window(sf::VideoMode(800, 600), "RL test");
-	float lastX = 400, lastY = 300;
+	GameConfig gc;
+
+	sf::RenderWindow  window(sf::VideoMode(gc.winWidth, gc.winHeight), "RL test");
+	float lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
 	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
@@ -148,9 +156,10 @@ int main()
 	camera.LastPosition = {-1,-1,-1};
 	camera.Pitch = -90.f;
 	camera.Yaw = 45.f;
-	camera.MovementSpeed = SPEED;
-	camera.MouseSensitivity = SENSITIVITY;
-	camera.Zoom = ZOOM;
+	camera.MovementSpeed = gc.SPEED;
+	camera.MouseSensitivity = gc.SENSITIVITY;
+	camera.Zoom = gc.ZOOM;
+	camera.viewport = {0.0f, 0.0f, (float)gc.winWidth , (float)gc.winHeight};
 	// run the program as long as the window is open
 
 	bool moved = true;
@@ -208,6 +217,18 @@ int main()
 				camera.ProcessMouseScroll(event.mouseWheelScroll.delta);
 				moved = true;
 			}
+			if (event.type == sf::Event::Resized)
+			{
+				
+				sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
+				window.setView(sf::View(visibleArea));
+
+				gc.winWidth = event.size.width;
+				gc.winHeight = event.size.height;
+
+				camera.viewport = { 0.0f, 0.0f, (float)gc.winWidth, (float)gc.winHeight };
+				moved = true;
+			}
 		}
 
 		player.z = 0;
@@ -231,13 +252,13 @@ int main()
 		//RENDERING
 		
 		sf::VertexArray lines(sf::LinesStrip, 2);
-		lines[0].position = sf::Vector2f(400, 0);
-		lines[1].position = sf::Vector2f(400, 600);
+		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
+		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
 		window.draw(lines);
 
-		lines[0].position = sf::Vector2f(0, 300);
-		lines[1].position = sf::Vector2f(800, 300);
+		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
+		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
 		window.draw(lines);
 
 		for (Tile& ent : list)

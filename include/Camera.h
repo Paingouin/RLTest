@@ -27,12 +27,12 @@ struct Camera
 	glm::mat4 model;
 	glm::mat4 mView;
 	glm::mat4 mProjection;
-	glm::vec4 viewport = { 0.0f , 0.0f, 800.0f,600.0f };
+	glm::vec4 viewport;
 
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors(glm::vec3 target)
 	{
-		// Calculate the new Front vector
+		// Calculate the new position of the camera
 		glm::vec3 posOffset;
 		posOffset.x = Zoom * sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
 		posOffset.y = Zoom * sin(glm::radians(Pitch)) * sin(glm::radians(Yaw));
@@ -66,7 +66,7 @@ struct Camera
 
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
-		mProjection = glm::perspectiveRH_NO(glm::radians(fov), 800.f / 600.f, near, far);
+		mProjection = glm::perspectiveRH_NO(glm::radians(fov), viewport[2] / viewport[3], near, far);
 		mProjection = mProjection * mView * model;
 		
 	}
@@ -112,11 +112,11 @@ struct Camera
 
 		glm::vec4 orig = { x, y, z , 1.f };
 		glm::vec4 mFinal =mProjection  * orig;
-		float distance = mFinal.w;
+		float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
 		mFinal.x /= mFinal.w;
 		mFinal.y /= mFinal.w;
 		mFinal.z = glm::abs(mFinal.z) / mFinal.w;
-		scale = (((6.f * 0.8f * (800.f / 600.f)) / distance) * (800.f / 600.f));
+		scale = (((6.f * 0.8f * (viewport[2] / viewport[3])) / distance) * (viewport[2] / viewport[3]));
 		if (mFinal.z < -1.f || mFinal.z > 1.f) //culling
 		{
 			render = false;
