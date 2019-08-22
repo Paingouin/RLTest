@@ -1,4 +1,3 @@
-
 #include "Camera.cpp"
 
 struct GameConfig
@@ -45,14 +44,13 @@ struct Cell
 };
 
 //TODO :
-//		FOV/ Light
+//		FOV
+//		Light
 //      
-//		Control angle of view
 //		Timestep
 //      LinTerp for camera movement
-
-//NOTE : do depth testung with scaling, and a vector sort by overloading <
-//Todo : vertex array for sprite bashing
+//		LinLerp for animation
+//		vertex array for sprite bashing
 
 //"angle" of the keypress, subtract the camera Z rotation, find the nearest matching direction
 
@@ -79,7 +77,7 @@ std::vector<Cell> genRectangleRoom()
 			else
 			{
 				cell.glyph = y+48;
-				cell.z = (x >= 3)? x -3 : 0.f;
+				cell.z = (x >= 3)? (x -3)*0.5 : 0.f;
 			}
 			list.push_back(cell);
 		}
@@ -268,15 +266,14 @@ int main()
 			map[player.x + player.y * 18].ent = &player;
 			camera.Position = { player.x , player.y  , player.z };
 			camera.updateCameraVectors(target);
-
-			//Gen mapSprite
-			glyphs = gensprite_map(font, texture, map);
-		
+	
 			moved = false;
 		}
 
 		//PRE-RENDERING
 		window.clear(sf::Color::Black);
+		//Gen mapSprite(todo : based on fov) + (todo: light)
+		glyphs = gensprite_map(font, texture, map);
 		//Z-sorting
 		for (Glyph& glyph : glyphs)
 		{ 
@@ -294,7 +291,8 @@ int main()
 			ent.sprite.setScale(ent.winZ,ent.winZ);
 			window.draw(ent.sprite);
 		}
-				sf::VertexArray lines(sf::LinesStrip, 2);
+	
+		sf::VertexArray lines(sf::LinesStrip, 2);
 		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
 		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
