@@ -9,14 +9,43 @@ struct GameConfig
 	const float SENSITIVITY = 0.5f;
 	const float ZOOM = 10.0f;
 
-	int winWidth = 800;
-	int winHeight = 600;
+	int winWidth = 1280;
+	int winHeight = 760;
+
+};
+
+
+struct Glyph
+{
+	bool render;
+	float x, y, z;
+	float winX, winY, winZ;
+
+	int32 colorMod;
+	sf::Sprite sprite;
+};
+
+struct Entity
+{
+	char glyph;
+	float x, y, z;
+
+	int32 baseColor;
+};
+
+
+struct Cell
+{
+	char glyph;
+	float x, y, z;
+
+	int32 baseColor;
+	Entity* ent = nullptr;
 
 };
 
 //TODO :
-//		refactor tile entity
-//      light attenuation
+//		FOV/ Light
 //      
 //		Control angle of view
 //		Timestep
@@ -28,71 +57,78 @@ struct GameConfig
 //"angle" of the keypress, subtract the camera Z rotation, find the nearest matching direction
 
 
-struct Tile
-{
-	bool render;
-
-	char glyph;
-
-	float x, y, z;
-	float winX, winY, winZ;
-	int32 color;
-	sf::Sprite sprite;
-
-};
-typedef Tile Player;
-
-
 struct Controller
 {
 	int32 lastPosMouseX, lastPosMouseZ;
 };
 
-char map[18 * 18] = {
-	'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#',
-	'#','9','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','8','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','7','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','6','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','7','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','4','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','3','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','2','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','1','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','+','#',
-	'#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#',
-};
 
-
-
-std::vector<Tile> gensprite_map( sf::Font& font,const sf::Texture& texture ,char* map)
+std::vector<Cell> genRectangleRoom()
 {
-	std::vector<Tile> list_entities;
+	std::vector<Cell> list;
+	for (int y = 0; y <18; ++y)
+	{
+		for (int x = 0; x < 18; ++x)
+		{
+			Cell cell;
+			if ((x == 0 || x == 17) || (y == 0 || y == 17))
+			{
+				cell.glyph = '#';
+				cell.z = 0;
+			}
+			else
+			{
+				cell.glyph = y+48;
+				cell.z = (x >= 3)? x -3 : 0.f;
+			}
+			list.push_back(cell);
+		}
+	}
+	return list;
+}
+
+
+std::vector<Glyph> gensprite_map( sf::Font& font,const sf::Texture& texture ,std::vector<Cell>& vec)
+{
+	std::vector<Glyph> list_entities;
 	for (int y = 0; y < 18; y++)
 	{
 		for (int x = 0; x < 18; ++x)
 		{
-			Tile ent = {
+			if (vec[x + y * 18].ent == nullptr)
+			{
+				Glyph ent = {
 							true
-							,map[x + y * 18]
-							, x 
-							, 17.f-y 
-							, ((x>3 && map[x + y * 18] == '+') ? ((x-3)*0.6) : 0)
-							, 0.f
+							, x
+							, y
+							, vec[x + y * 18].z
 							,0.f
 							,0.f
-							, 1.f
-							,sf::Sprite(texture, font.getGlyph(map[x + y * 18], 48, false).textureRect )
-			};
-			ent.sprite.setColor(sf::Color(250- x + y * 18, 205 - x + y * 18, 195 - x + y * 18));
-			ent.sprite.setOrigin(20, 20);
-			list_entities.push_back(ent);
+							,0.f
+							,0.f
+							,sf::Sprite(texture, font.getGlyph(vec[x + y * 18].glyph, 48, false).textureRect)
+				};
+				ent.sprite.setColor(sf::Color(200 - x + y * 18, 100 - x + y * 18, 200));
+				ent.sprite.setOrigin(20, 20);
+				list_entities.push_back(ent);
+			}
+			else if(vec[x + y * 18].ent != nullptr)
+			{
+				Glyph ent = {
+							true
+							, x
+							, y
+							, vec[x + y * 18].ent->z
+							,0.f
+							,0.f
+							,0.f
+							,0.f
+							,sf::Sprite(texture, font.getGlyph(vec[x + y * 18].ent->glyph, 48, false).textureRect)
+				};
+				ent.sprite.setColor(sf::Color(250 - x + y * 18, 205 - x + y * 18, 195 - x + y * 18));
+				ent.sprite.setOrigin(20, 20);
+				list_entities.push_back(ent);
+			}		
 		}
 	}
 	return list_entities;
@@ -117,26 +153,29 @@ int main()
 	}
 
 	const sf::Texture& texture = font.getTexture(48 );
-	std::vector<Tile> list = gensprite_map(font, texture, map);
+
+
+	//MAP
+	std::vector<Cell> map = genRectangleRoom();
 	Controller control = {};
 	
-	Player player =
+	Entity player =
 	{
-		true
-		,'@'
-		, 2.f 
-		, 6.f 
-		, 0.f
-		, 0.f
+		'@'
 		,0.f
 		,0.f
 		,0.f
-		,sf::Sprite(texture, font.getGlyph('@', 48 , false).textureRect)
+		,0.f
 	};
-	player.sprite.setOrigin(20, 20);
+
+	map[3 + 3 * 18].ent = &player;
+
+	player.x = 3;
+	player.y = 3;
+
 	Camera camera = { };
-	camera.LastPosition = {-1,-1,-1};
-	camera.Pitch = -90.f;
+	camera.LastPosition = { player.x,player.y,player.z };
+	camera.Pitch =  -90.f;
 	camera.Yaw = 45.f;
 	camera.MovementSpeed = gc.SPEED;
 	camera.MouseSensitivity = gc.SENSITIVITY;
@@ -145,6 +184,7 @@ int main()
 	// run the program as long as the window is open
 
 	bool moved = true;
+	std::vector<Glyph> glyphs;
 	while (window.isOpen())
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
@@ -156,22 +196,30 @@ int main()
 				window.close();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				player.x -= 1.f;
+				map[player.x + player.y * 18].ent = nullptr;
+				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
+				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				player.x += 1.f;
+				map[player.x + player.y * 18].ent = nullptr;
+				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
+				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
-				player.y += 1.f;
+				map[player.x + player.y * 18].ent = nullptr;
+				player.y += glm::round(glm::sin(glm::radians(camera.Pitch+180)));
+				player.x += glm::round(glm::cos(glm::radians(camera.Pitch+180)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
-				player.y -= 1.f;
+				map[player.x + player.y * 18].ent = nullptr;
+				player.y += glm::round(glm::sin(glm::radians(camera.Pitch )));
+				player.x += glm::round(glm::cos(glm::radians(camera.Pitch )));
 				moved = true;
 			}
 
@@ -213,30 +261,40 @@ int main()
 			}
 		}
 
-		player.z = 0;
+		player.z = map[player.x + player.y * 18].z;
 		glm::vec3 target = { player.x , player.y , player.z };
 		if (moved)
 		{
+			map[player.x + player.y * 18].ent = &player;
 			camera.Position = { player.x , player.y  , player.z };
 			camera.updateCameraVectors(target);
+
+			//Gen mapSprite
+			glyphs = gensprite_map(font, texture, map);
 		
 			moved = false;
 		}
 
 		//PRE-RENDERING
 		window.clear(sf::Color::Black);
-		//genSpriteMap based on fov
-		list = gensprite_map(font, texture, map);
 		//Z-sorting
-		for (Tile& ent : list)
+		for (Glyph& glyph : glyphs)
 		{ 
-			camera.to_global(ent.x, ent.y, ent.z, ent.winX, ent.winY, ent.winZ, ent.render);
+			camera.to_global(glyph.x, glyph.y, glyph.z, glyph.winX, glyph.winY, glyph.winZ, glyph.render);
 		}
-		std::sort(list.begin(), list.end(),	[](const Tile& a, const Tile& b) {return a.winZ < b.winZ; });
+		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.winZ < b.winZ; });
 
 		//RENDERING
-		
-		sf::VertexArray lines(sf::LinesStrip, 2);
+		for (Glyph& ent : glyphs)
+		{
+			if (!ent.render) 
+				continue;
+			ent.sprite.setPosition(sf::Vector2f(ent.winX,ent.winY));
+			ent.sprite.setRotation(camera.Pitch + 90.f);	
+			ent.sprite.setScale(ent.winZ,ent.winZ);
+			window.draw(ent.sprite);
+		}
+				sf::VertexArray lines(sf::LinesStrip, 2);
 		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
 		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
@@ -245,23 +303,6 @@ int main()
 		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
 		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
 		window.draw(lines);
-
-		for (Tile& ent : list)
-		{
-			if (!ent.render) 
-				continue;
-			ent.sprite.setPosition(sf::Vector2f(ent.winX,ent.winY));
-			ent.sprite.setRotation(camera.Pitch + 180.f);	
-			ent.sprite.setScale(ent.winZ,ent.winZ);
-			window.draw(ent.sprite);
-		}
-		camera.to_global(player.x, player.y, player.z,player.winX , player.winY ,player.winZ, player.render);
-		player.sprite.setPosition(sf::Vector2f(player.winX, player.winY));
-		player.sprite.setRotation(camera.Pitch + 180.f);
-	
-		player.sprite.setScale(player.winZ, player.winZ);
-		window.draw(player.sprite);
-
 		window.display();
 	}
 

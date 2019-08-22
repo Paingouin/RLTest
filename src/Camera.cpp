@@ -60,7 +60,7 @@ struct Camera
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
 		model = mScale;
 		glm::vec4 camPos = { Position.x , Position.y , Position.z  , 1.f };
-		glm::vec4 tarPos = { target.x , target.y , target.z  , 1.f };
+		glm::vec4 tarPos = { target.x ,  target.y , target.z  , 1.f };
 
 
 		glm::vec3 camPos3 = model * camPos;
@@ -88,7 +88,7 @@ struct Camera
 		//std::cout << xoffset << std::endl;
 		Yaw += yoffset;
 		Pitch -= xoffset;
-
+		//Pitch = Pitch - 360 * floor(Pitch / 360);
 		// Make sure that when pitch is out of bounds, screen doesn't get flipped
 		if (constrainPitch)
 		{
@@ -125,7 +125,7 @@ struct Camera
 		mFinal.y /= mFinal.w;
 		mFinal.z /= mFinal.w;//mFinal.z = glm::abs(mFinal.z) / mFinal.w;
 		  
-		scale = heightOfNearPlane * 0.02f / distance;
+		scale = heightOfNearPlane * 0.015f / distance;
 		
 		if (mFinal.z < -1.f || mFinal.z > 1.f) //culling
 		{
