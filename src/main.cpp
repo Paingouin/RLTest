@@ -14,22 +14,14 @@ struct GameConfig
 };
 
 
-struct Glyph
-{
-	bool render;
-	float x, y, z;
-	float winX, winY, winZ;
 
-	int32 colorMod;
-	sf::Sprite sprite;
-};
 
 struct Entity
 {
 	char glyph;
 	float x, y, z;
 
-	int32 baseColor;
+	sf::Color baseColor;
 };
 
 
@@ -38,7 +30,7 @@ struct Cell
 	char glyph;
 	float x, y, z;
 
-	int32 baseColor;
+	sf::Color baseColor;
 	Entity* ent = nullptr;
 
 };
@@ -79,6 +71,9 @@ std::vector<Cell> genRectangleRoom()
 				cell.glyph = y+48;
 				cell.z = (x >= 3)? (x -3)*0.5 : 0.f;
 			}
+			cell.x = x;
+			cell.y = y;
+			cell.baseColor = sf::Color(200 - x + y * 18, 100 - x + y * 18, 200, 255);
 			list.push_back(cell);
 		}
 	}
@@ -86,51 +81,6 @@ std::vector<Cell> genRectangleRoom()
 }
 
 
-std::vector<Glyph> gensprite_map( sf::Font& font,const sf::Texture& texture ,std::vector<Cell>& vec)
-{
-	std::vector<Glyph> list_entities;
-	for (int y = 0; y < 18; y++)
-	{
-		for (int x = 0; x < 18; ++x)
-		{
-			if (vec[x + y * 18].ent == nullptr)
-			{
-				Glyph ent = {
-							true
-							, x
-							, y
-							, vec[x + y * 18].z
-							,0.f
-							,0.f
-							,0.f
-							,0.f
-							,sf::Sprite(texture, font.getGlyph(vec[x + y * 18].glyph, 48, false).textureRect)
-				};
-				ent.sprite.setColor(sf::Color(200 - x + y * 18, 100 - x + y * 18, 200));
-				ent.sprite.setOrigin(20, 20);
-				list_entities.push_back(ent);
-			}
-			else if(vec[x + y * 18].ent != nullptr)
-			{
-				Glyph ent = {
-							true
-							, x
-							, y
-							, vec[x + y * 18].ent->z
-							,0.f
-							,0.f
-							,0.f
-							,0.f
-							,sf::Sprite(texture, font.getGlyph(vec[x + y * 18].ent->glyph, 48, false).textureRect)
-				};
-				ent.sprite.setColor(sf::Color(250 - x + y * 18, 205 - x + y * 18, 195 - x + y * 18));
-				ent.sprite.setOrigin(20, 20);
-				list_entities.push_back(ent);
-			}		
-		}
-	}
-	return list_entities;
-}
 
 int main()
 {
@@ -150,7 +100,7 @@ int main()
 		// error...
 	}
 
-	const sf::Texture& texture = font.getTexture(48 );
+	const sf::Texture& texture = font.getTexture(48);
 
 
 	//MAP
@@ -163,7 +113,7 @@ int main()
 		,0.f
 		,0.f
 		,0.f
-		,0.f
+		,sf::Color(255, 255, 255, 255)
 	};
 
 	map[3 + 3 * 18].ent = &player;
@@ -174,15 +124,13 @@ int main()
 	Camera camera = { };
 	camera.LastPosition = { player.x,player.y,player.z };
 	camera.Pitch =  -90.f;
-	camera.Yaw = 45.f;
+	camera.Yaw = 0.1f;
 	camera.MovementSpeed = gc.SPEED;
 	camera.MouseSensitivity = gc.SENSITIVITY;
 	camera.Zoom = gc.ZOOM;
 	camera.viewport = {0.0f, 0.0f, (float)gc.winWidth , (float)gc.winHeight};
 	// run the program as long as the window is open
-
 	bool moved = true;
-	std::vector<Glyph> glyphs;
 	while (window.isOpen())
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
@@ -271,26 +219,41 @@ int main()
 		}
 
 		//PRE-RENDERING
+		camera.m_vertices.clear();
+		camera.m_vertices.setPrimitiveType(sf::Quads);
 		window.clear(sf::Color::Black);
 		//Gen mapSprite(todo : based on fov) + (todo: light)
-		glyphs = gensprite_map(font, texture, map);
-		//Z-sorting
-		for (Glyph& glyph : glyphs)
+		std::vector<Glyph> glyphs;
+		//GenGlyps
+		for (Cell& cell : map)
 		{ 
-			camera.to_global(glyph.x, glyph.y, glyph.z, glyph.winX, glyph.winY, glyph.winZ, glyph.render);
+			Glyph g;
+			if (cell.ent != nullptr)
+			{
+				g=camera.to_global(cell.ent->x, cell.ent->y, cell.ent->z, cell.ent->glyph, cell.ent->baseColor, font);
+				if (g.orig.z != -1) glyphs.push_back(g);
+			}
+			else
+			{
+				g = camera.to_global(cell.x, cell.y, cell.z, cell.glyph, cell.baseColor, font);
+				if (g.orig.z != -1) glyphs.push_back(g);
+			}
 		}
-		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.winZ < b.winZ; });
-
-		//RENDERING
-		for (Glyph& ent : glyphs)
+		
+		//Z-sorting
+		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.orig.z > b.orig.z; });
+		for (Glyph& glyph : glyphs)
 		{
-			if (!ent.render) 
-				continue;
-			ent.sprite.setPosition(sf::Vector2f(ent.winX,ent.winY));
-			ent.sprite.setRotation(camera.Pitch + 90.f);	
-			ent.sprite.setScale(ent.winZ,ent.winZ);
-			window.draw(ent.sprite);
+			camera.m_vertices.append(glyph.vertices[0]);
+			camera.m_vertices.append(glyph.vertices[1]);
+			camera.m_vertices.append(glyph.vertices[2]);
+			camera.m_vertices.append(glyph.vertices[3]);
+
 		}
+
+		sf::RenderStates states;
+		states.texture = &font.getTexture(128);
+		window.draw(camera.m_vertices,states );
 	
 		sf::VertexArray lines(sf::LinesStrip, 2);
 		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);

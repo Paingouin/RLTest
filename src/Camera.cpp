@@ -1,11 +1,4 @@
 #include "main.h"
-#include "glm/vec3.hpp" // glm::vec3
-#include "glm/vec4.hpp" // glm::vec4
-#include "glm/mat4x4.hpp" // glm::mat4
-#include "glm/ext/matrix_transform.hpp" // glm::translate, glm::rotate, glm::scale
-#include "glm/ext/matrix_clip_space.hpp" // glm::perspective
-#include "glm/gtc/constants.hpp"
-
 
 struct Camera
 {
@@ -28,10 +21,14 @@ struct Camera
 	float far = 100.f;
 	float heightOfNearPlane;
 
+	glm::vec4 viewport;
+	glm::vec4 camRight;
+	glm::vec4 camUp;
 	glm::mat4 model;
 	glm::mat4 mView;
 	glm::mat4 mProjection;
-	glm::vec4 viewport;
+
+	sf::VertexArray m_vertices;
 
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors(glm::vec3 target)
@@ -51,6 +48,14 @@ struct Camera
 			 0.f , 0.f, 1.f, 0.f,
 			 0.f , 0.f, 0.f, 1.f
 		};
+		glm::mat4 mTranslate =
+		{
+			 1.f , 0.f, 0.f, 0.0f,//X
+			 0.f , 1.f, 0.f, 0.0f,//Y
+			 0.f , 0.f, 1.f, 0.0f,//Z
+			 0.f , 0.f, 0.f, 1.f
+		};
+
 
 		//https://gamedev.stackexchange.com/questions/54391/scaling-point-sprites-with-distance/65770#65770
 		heightOfNearPlane = ((float)abs(viewport[3] - viewport[1]) /
@@ -58,9 +63,9 @@ struct Camera
 
 		// calculate the model matrix for each object and pass  before drawing
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
-		model = mScale;
+		model = mTranslate*mScale ;
 		glm::vec4 camPos = { Position.x , Position.y , Position.z  , 1.f };
-		glm::vec4 tarPos = { target.x ,  target.y , target.z  , 1.f };
+		glm::vec4 tarPos = { target.x  ,  target.y , target.z  , 1.f };
 
 
 		glm::vec3 camPos3 = model * camPos;
@@ -72,10 +77,14 @@ struct Camera
 			{ 0.f, 0.f, 1.f }// Head is up (set to 0,-1,0 to look upside-down)
 		);
 
+		camRight = { mView[0][0],  mView[1][0], mView[2][0],0.f };
+		camUp = { mView[0][1], mView[1][1], mView[2][1] , 0.f};
+
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
+
 		mProjection = glm::perspectiveRH_NO(glm::radians(fov), viewport[2] / viewport[3], near, far);
-		mProjection = mProjection * mView * model;
+		mProjection = mProjection * mView  * model;
 
 	}
 
@@ -115,38 +124,95 @@ struct Camera
 
 
 	//Calculate Global position on screen based of camera
-	const sf::Vector2f to_global(float x, float y, float z, float& winX, float& winY, float& scale, bool& render)
+	const Glyph to_global(float x, float y, float z, char glyph, sf::Color& color, sf::Font& font)
 	{
+		Glyph result = {};
 
 		glm::vec4 orig = { x, y, z , 1.f };
-		glm::vec4 mFinal = mProjection * orig;
-		float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
-		mFinal.x /= mFinal.w;
-		mFinal.y /= mFinal.w;
-		mFinal.z /= mFinal.w;//mFinal.z = glm::abs(mFinal.z) / mFinal.w;
-		  
-		scale = heightOfNearPlane * 0.015f / distance;
-		
-		if (mFinal.z < -1.f || mFinal.z > 1.f) //culling
+		glm::vec4 LU = orig - camRight * 1.f *0.5f + camUp * 1.f;
+		glm::vec4 RU = orig + camRight * 1.f * 0.5f + camUp * 1.f;
+		glm::vec4 RB = orig + camRight * (1.f * 0.5f);
+		glm::vec4 LB = orig - camRight * (1.f * 0.5f);
+
+		LU = mProjection * LU;
+		RU = mProjection * RU;
+		RB = mProjection * RB;
+		LB = mProjection * LB;
+
+		LU /= LU.w;
+		RU /= RU.w;
+		RB /= RB.w;
+		LB /= LB.w;
+
+		LU = LU * 0.5f + 0.5f;
+		RU = RU * 0.5f + 0.5f;
+		RB = RB * 0.5f + 0.5f;
+		LB = LB * 0.5f + 0.5f;
+
+		LU.x = (LU.x * viewport[2]) + viewport[0];
+		LU.y = (viewport[3] - (LU.y * viewport[3])) + viewport[1];
+		RU.x = (RU.x * viewport[2]) + viewport[0];
+		RU.y = (viewport[3] - (RU.y * viewport[3])) + viewport[1];
+		RB.x = (RB.x * viewport[2]) + viewport[0];
+		RB.y = (viewport[3] - (RB.y * viewport[3])) + viewport[1];
+		LB.x = (LB.x * viewport[2]) + viewport[0];
+		LB.y = (viewport[3] - (LB.y * viewport[3])) + viewport[1];
+
+		orig = mProjection * orig;
+	
+		//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
+		orig.x /= orig.w;
+		orig.y /= orig.w;
+		orig.z = glm::abs(orig.z) / orig.w;
+		//orig /= orig.w;
+		//scale = heightOfNearPlane * 0.015f / distance;
+		orig = orig * 0.5f + 0.5f;
+		if ((LU.z > -1.f && LU.z < 1.f)&&(RU.z > -1.f && RU.z < 1.f)&& (RB.z > -1.f && RB.z < 1.f) && (LB.z > -1.f && LB.z < 1.f)) //culling
 		{
-			render = false;
-			return sf::Vector2f();
+			sf::Vertex quad1 = {};
+			sf::Vertex quad2 = {};
+			sf::Vertex quad3 = {};
+			sf::Vertex quad4 = {};
+			// define its 4 corners
+			quad1.position = sf::Vector2f(LU.x, LU.y);
+			quad2.position = sf::Vector2f(RU.x, RU.y);
+			quad3.position = sf::Vector2f(RB.x, RB.y);
+			quad4.position = sf::Vector2f(LB.x, LB.y);
+
+			sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
+
+			// define its 4 texture coordinates
+			quad1.texCoords = sf::Vector2f(textcoor.left ,textcoor.top );
+			quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
+			quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
+			quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
+
+			quad1.color = color;
+			quad2.color = color;
+			quad3.color = color;
+			quad4.color = color;
+
+			result.vertices[0] = quad1;
+			result.vertices[1] = quad2;
+			result.vertices[2] = quad3;
+			result.vertices[3] = quad4;
+			result.orig = orig;
+			return result;
 		}
 		else
 		{
-			render = true;
+			result.orig = orig;
+			result.orig.z = -1;
+			return result;
 		}
 
-		mFinal = mFinal * 0.5f + 0.5f;
+		//mFinal = mFinal * 0.5f + 0.5f;
 		//To do Z0(0,1) (NO par default) :  comment above and uncomment below
 		//mFinal.x = mFinal.x * 0.5 + 0.5;
 		//mFinal.y = mFinal.y * 0.5 + 0.5;
 
-		winX = (mFinal.x * viewport[2]) + viewport[0];
-		winY = (viewport[3] - (mFinal.y * viewport[3])) + viewport[1];
-
-		const sf::Vector2f vec(mFinal.x, mFinal.y);//return final position
-		return vec;
+		//winX = (mFinal.x * viewport[2]) + viewport[0];
+		//winY = (viewport[3] - (mFinal.y * viewport[3])) + viewport[1];
 	}
 
 };
