@@ -42,7 +42,6 @@ struct Cell
 //		Timestep
 //      LinTerp for camera movement
 //		LinLerp for animation
-//		vertex array for sprite bashing
 
 //"angle" of the keypress, subtract the camera Z rotation, find the nearest matching direction
 

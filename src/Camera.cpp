@@ -24,7 +24,9 @@ struct Camera
 	glm::vec4 viewport;
 	glm::vec4 camRight;
 	glm::vec4 camUp;
+	glm::vec3 camFront;
 	glm::mat4 model;
+	glm::mat4 mRotate;
 	glm::mat4 mView;
 	glm::mat4 mProjection;
 	glm::mat4 mTotal;
@@ -57,7 +59,13 @@ struct Camera
 			 0.f , 0.f, 0.f, 1.f
 		};
 
-
+	    mRotate =
+		{
+			 glm::cos(glm::radians(Pitch)), -glm::sin(glm::radians(Pitch)) , 0.f, 0.0f,//X
+			 glm::sin(glm::radians(Pitch)), glm::cos(glm::radians(Pitch)) , 0.f, 0.0f,//Y
+			 0.f , 0.f, 1.f, 0.0f,//Z
+			 0.f , 0.f, 0.f, 1.f
+		};
 		//https://gamedev.stackexchange.com/questions/54391/scaling-point-sprites-with-distance/65770#65770
 		/*heightOfNearPlane = ((float)abs(viewport[3] - viewport[1]) /
 			(2 * tan(0.5 * fov * glm::pi<float>() / 180.0)));*/
@@ -65,8 +73,8 @@ struct Camera
 		// calculate the model matrix for each object and pass  before drawing
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
 		model = mTranslate*mScale ;
-		glm::vec4 camPos = { Position.x , Position.y , Position.z  , 1.f };
-		glm::vec4 tarPos = { target.x  ,  target.y , target.z  , 1.f };
+		glm::vec4 camPos = {(float) Position.x , (float)Position.y ,(float)Position.z  , 1.f };
+		glm::vec4 tarPos = { (float) target.x  , (float)target.y , (float)target.z  , 1.f };
 
 
 		glm::vec3 camPos3 = model * camPos;
@@ -81,6 +89,8 @@ struct Camera
 		camRight = { mView[0][0],  mView[1][0], mView[2][0],0.f };
 		camUp = { mView[0][1], mView[1][1], mView[2][1] , 0.f};
 
+		camFront = glm::normalize(camPos3 - tarPos3);
+		mRotate = glm::rotate(glm::radians(-Pitch - 180), camFront);
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
 
@@ -132,14 +142,30 @@ struct Camera
 		glm::vec4 orig = { x, y, z, 1.f };
 		
 		//orig = glm::rotate(Pitch, glm::vec3(0.f, 0.f, 1.f)) * orig;
-		glm::vec4 LU = { orig.x - 0.5 , orig.y + 0.5, orig.z ,1.f };
-		glm::vec4 RU = { orig.x + 0.5 , orig.y + 0.5, orig.z ,1.f };
-		glm::vec4 RB = { orig.x + 0.5 , orig.y - 0.5, orig.z ,1.f };
-		glm::vec4 LB = { orig.x - 0.5 , orig.y - 0.5, orig.z ,1.f };
-		//glm::vec4 LU = orig - camRight * 0.6f * 0.5f + camUp * 0.6f * 0.5f;
-		//glm::vec4 RU = orig + camRight * 0.6f *0.5f + camUp * 0.6f * 0.5f;
-		//glm::vec4 RB = orig + camRight * (0.6f *0.5f ) - camUp * 0.6f * 0.5f;
-		//glm::vec4 LB = orig - camRight * (0.6f *0.5f) - camUp * 0.6f * 0.5f;
+		//glm::vec4 LU = { orig.x - 0.5 , orig.y + 0.5, orig.z ,1.f };
+		//glm::vec4 RU = { orig.x + 0.5 , orig.y + 0.5, orig.z ,1.f };
+		//glm::vec4 RB = { orig.x + 0.5 , orig.y - 0.5, orig.z ,1.f };
+		//glm::vec4 LB = { orig.x - 0.5 , orig.y - 0.5, orig.z ,1.f };
+
+		glm::vec4 LU = orig -  camRight * 0.6f *0.5f +  camUp * 0.6f * 0.5f;
+		glm::vec4 RU = orig +  camRight * 0.6f *0.5f +   camUp * 0.6f * 0.5f;
+		glm::vec4 RB = orig +  camRight * 0.6f *0.5f -  camUp * 0.6f * 0.5f;
+		glm::vec4 LB = orig -  camRight * 0.6f *0.5f -  camUp * 0.6f * 0.5f;
+	    
+		LU -= orig;
+		RU -= orig;
+		RB -= orig;
+		LB -= orig;
+
+		LU = mRotate * LU;
+		RU = mRotate * RU;
+		RB = mRotate * RB;
+		LB = mRotate * LB;
+
+		LU += orig;
+		RU += orig;
+		RB += orig;
+		LB += orig;
 
 		
 		LU = mTotal * LU;
