@@ -68,7 +68,7 @@ std::vector<Cell> genRectangleRoom()
 			}
 			else
 			{
-				cell.glyph = y+48;
+				cell.glyph = '+';// y+48;
 				cell.z = (x >= 3)? (x -3)*0.5 : 0.f;
 			}
 			cell.x = x;

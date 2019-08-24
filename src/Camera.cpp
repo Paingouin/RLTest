@@ -27,6 +27,7 @@ struct Camera
 	glm::mat4 model;
 	glm::mat4 mView;
 	glm::mat4 mProjection;
+	glm::mat4 mTotal;
 
 	sf::VertexArray m_vertices;
 
@@ -58,8 +59,8 @@ struct Camera
 
 
 		//https://gamedev.stackexchange.com/questions/54391/scaling-point-sprites-with-distance/65770#65770
-		heightOfNearPlane = ((float)abs(viewport[3] - viewport[1]) /
-			(2 * tan(0.5 * fov * glm::pi<float>() / 180.0)));
+		/*heightOfNearPlane = ((float)abs(viewport[3] - viewport[1]) /
+			(2 * tan(0.5 * fov * glm::pi<float>() / 180.0)));*/
 
 		// calculate the model matrix for each object and pass  before drawing
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
@@ -84,7 +85,7 @@ struct Camera
 		//ZO : z is normalied [0 +1]
 
 		mProjection = glm::perspectiveRH_NO(glm::radians(fov), viewport[2] / viewport[3], near, far);
-		mProjection = mProjection * mView  * model;
+		mTotal = mProjection * mView  * model;
 
 	}
 
@@ -128,16 +129,23 @@ struct Camera
 	{
 		Glyph result = {};
 
-		glm::vec4 orig = { x, y, z , 1.f };
-		glm::vec4 LU = orig - camRight * 1.f *0.5f + camUp * 1.f;
-		glm::vec4 RU = orig + camRight * 1.f * 0.5f + camUp * 1.f;
-		glm::vec4 RB = orig + camRight * (1.f * 0.5f);
-		glm::vec4 LB = orig - camRight * (1.f * 0.5f);
+		glm::vec4 orig = { x, y, z, 1.f };
+		
+		//orig = glm::rotate(Pitch, glm::vec3(0.f, 0.f, 1.f)) * orig;
+		glm::vec4 LU = { orig.x - 0.5 , orig.y + 0.5, orig.z ,1.f };
+		glm::vec4 RU = { orig.x + 0.5 , orig.y + 0.5, orig.z ,1.f };
+		glm::vec4 RB = { orig.x + 0.5 , orig.y - 0.5, orig.z ,1.f };
+		glm::vec4 LB = { orig.x - 0.5 , orig.y - 0.5, orig.z ,1.f };
+		//glm::vec4 LU = orig - camRight * 0.6f * 0.5f + camUp * 0.6f * 0.5f;
+		//glm::vec4 RU = orig + camRight * 0.6f *0.5f + camUp * 0.6f * 0.5f;
+		//glm::vec4 RB = orig + camRight * (0.6f *0.5f ) - camUp * 0.6f * 0.5f;
+		//glm::vec4 LB = orig - camRight * (0.6f *0.5f) - camUp * 0.6f * 0.5f;
 
-		LU = mProjection * LU;
-		RU = mProjection * RU;
-		RB = mProjection * RB;
-		LB = mProjection * LB;
+		
+		LU = mTotal * LU;
+		RU = mTotal * RU;
+		RB = mTotal * RB;
+		LB = mTotal * LB;
 
 		LU /= LU.w;
 		RU /= RU.w;
@@ -149,26 +157,28 @@ struct Camera
 		RB = RB * 0.5f + 0.5f;
 		LB = LB * 0.5f + 0.5f;
 
-		LU.x = (LU.x * viewport[2]) + viewport[0];
-		LU.y = (viewport[3] - (LU.y * viewport[3])) + viewport[1];
-		RU.x = (RU.x * viewport[2]) + viewport[0];
-		RU.y = (viewport[3] - (RU.y * viewport[3])) + viewport[1];
-		RB.x = (RB.x * viewport[2]) + viewport[0];
-		RB.y = (viewport[3] - (RB.y * viewport[3])) + viewport[1];
-		LB.x = (LB.x * viewport[2]) + viewport[0];
-		LB.y = (viewport[3] - (LB.y * viewport[3])) + viewport[1];
-
-		orig = mProjection * orig;
-	
-		//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
-		orig.x /= orig.w;
-		orig.y /= orig.w;
-		orig.z = glm::abs(orig.z) / orig.w;
-		//orig /= orig.w;
-		//scale = heightOfNearPlane * 0.015f / distance;
-		orig = orig * 0.5f + 0.5f;
+		
 		if ((LU.z > -1.f && LU.z < 1.f)&&(RU.z > -1.f && RU.z < 1.f)&& (RB.z > -1.f && RB.z < 1.f) && (LB.z > -1.f && LB.z < 1.f)) //culling
 		{
+			LU.x = (LU.x * viewport[2]) + viewport[0];
+			LU.y = (viewport[3] - (LU.y * viewport[3])) + viewport[1];
+			RU.x = (RU.x * viewport[2]) + viewport[0];
+			RU.y = (viewport[3] - (RU.y * viewport[3])) + viewport[1];
+			RB.x = (RB.x * viewport[2]) + viewport[0];
+			RB.y = (viewport[3] - (RB.y * viewport[3])) + viewport[1];
+			LB.x = (LB.x * viewport[2]) + viewport[0];
+			LB.y = (viewport[3] - (LB.y * viewport[3])) + viewport[1];
+
+			orig = mTotal * orig;
+
+			//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
+			orig.x /= orig.w;
+			orig.y /= orig.w;
+			orig.z /= orig.w;
+			//orig /= orig.w;
+			//scale = heightOfNearPlane * 0.015f / distance;
+			orig = orig * 0.5f + 0.5f;
+
 			sf::Vertex quad1 = {};
 			sf::Vertex quad2 = {};
 			sf::Vertex quad3 = {};

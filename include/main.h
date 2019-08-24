@@ -20,9 +20,9 @@
 
 
 // Include the STB image library - only the PNG support
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
-#include "stb_image.h"
+//#define STB_IMAGE_IMPLEMENTATION
+//#define STBI_ONLY_PNG
+//#include "stb_image.h"
 
 typedef uint8_t		uint8;
 typedef uint32_t	uint32;
