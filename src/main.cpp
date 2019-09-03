@@ -27,6 +27,9 @@ struct Entity
 
 struct Cell
 {
+	bool block = false;
+	bool visible = false;
+
 	char glyph;
 	float x, y, z;
 
@@ -64,11 +67,12 @@ std::vector<Cell> genRectangleRoom()
 			{
 				cell.glyph = '#';
 				cell.z = 0;
+				cell.block = true;
 			}
 			else
 			{
 				cell.glyph = '+';// y+48;
-				cell.z = (x >= 3)? (x -3)*0.5 : 0.f;
+				cell.z = 0;//(x >= 3)? (x -3.f)*0.1 : 0.f;
 			}
 			cell.x = x;
 			cell.y = y;
@@ -76,16 +80,104 @@ std::vector<Cell> genRectangleRoom()
 			list.push_back(cell);
 		}
 	}
+
+	list[6 + 6 * 18].glyph = '#';
+	list[6 + 6 * 18].block = true;
+
+	list[8 + 12 * 18].glyph = '#';
+	list[8 + 12 * 18].block = true;
 	return list;
 }
 
+
+void castLight(std::vector<Cell>& map, int row, int startX, int startY, float start, float end, int xx, int xy, int yx, int yy, float radius)
+{
+	float newStart = 0.0f;
+	if (start < end) {
+		return;
+	}
+	bool blocked = false;
+	for (int distance = row; distance <= radius && !blocked; distance++) {
+		int deltaY = -distance;
+		for (int deltaX = -distance; deltaX <= 0; deltaX++) {
+			int currentX = startX + deltaX * xx + deltaY * xy;
+			int currentY = startY + deltaX * yx + deltaY * yy;
+			float leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
+			float rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
+
+			if (!(currentX >= 0 && currentY >= 0 && currentX < 18 && currentY < 18) || start < rightSlope) {
+				continue;
+			}
+			else if (end > leftSlope) {
+				break;
+			}
+
+			//check if it's within the lightable area and light if needed
+			if ((deltaX * deltaX) + (deltaY * deltaY) <
+			((radius - 3) * (radius - 3))) {
+				//float bright = (float)(1 - (rStrat.radius(deltaX, deltaY) / radius));
+				map[currentX + currentY * 18].visible = true;
+			}
+		
+
+			if (blocked) { //previous cell was a blocking one
+				if (map[currentX + currentY * 18].block >= 1) {//hit a wall
+					newStart = rightSlope;
+					continue;
+				}
+				else {
+					blocked = false;
+					start = newStart;
+				}
+			}
+			else {
+				if (map[currentX + currentY * 18].block >= 1 && distance < radius) {//hit a wall within sight line
+					blocked = true;
+					castLight(map, distance + 1, startX, startY, start, leftSlope, xx, xy, yx, yy, radius);
+					newStart = rightSlope;
+				}
+			}
+		}
+	}
+}
+
+//radius: max distance FOV;
+void calculateFOV(std::vector<Cell>& map,  int startX, int startY, float radius)
+{
+	for (Cell& cell : map)
+	{
+		cell.visible = false;
+	}
+
+	map[startX + startY * 18].visible = true;
+	
+	//For each diagonals
+	castLight(map, 1, startX , startY, 1.0f, 0.0f, 0, -1, 1, 0, radius);
+	castLight(map, 1, startX, startY, 1.0f, 0.0f, -1, 0, 0, 1, radius);
+	castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, 1, 0, radius);
+	castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, 1, radius);
+	castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, -1, 0, radius);
+	castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, -1, radius);
+	castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, -1, -1, 0, radius);
+	castLight(map, 1, startX, startY, 1.0f, 0.0f,-1, 0, 0, -1, radius);
+	
+}
 
 
 int main()
 {
 	GameConfig gc;
 
-	sf::RenderWindow  window(sf::VideoMode(gc.winWidth, gc.winHeight), "RL test");
+	sf::ContextSettings settings;
+	settings.depthBits = 24;
+	settings.stencilBits = 8;
+	settings.antialiasingLevel = 4;
+	settings.majorVersion = 3;
+	settings.minorVersion = 2;
+
+
+	sf::RenderWindow  window(sf::VideoMode(gc.winWidth, gc.winHeight), "RL test", sf::Style::Default, settings);
+	window.setActive(true);
 	float lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
 	bool firstMouse = true;
 
@@ -213,6 +305,7 @@ int main()
 			map[player.x + player.y * 18].ent = &player;
 			camera.Position = { player.x , player.y  , player.z };
 			camera.updateCameraVectors(target);
+			calculateFOV(map, player.x, player.y, 10);
 	
 			moved = false;
 		}
@@ -227,16 +320,26 @@ int main()
 		for (Cell& cell : map)
 		{ 
 			Glyph g;
-			if (cell.ent != nullptr)
+			if(cell.visible == true)
 			{
-				g=camera.to_global(cell.ent->x, cell.ent->y, cell.ent->z, cell.ent->glyph, cell.ent->baseColor, font);
-				if (g.orig.z != -1) glyphs.push_back(g);
-			}
-			else
-			{
-				g = camera.to_global(cell.x, cell.y, cell.z, cell.glyph, cell.baseColor, font);
-				if (g.orig.z != -1) glyphs.push_back(g);
-			}
+				if (cell.ent != nullptr)
+				{
+					g = camera.to_global(cell.ent->x, cell.ent->y, cell.ent->z, cell.ent->glyph, cell.ent->baseColor, font);
+					if (g.orig.z != -1) glyphs.push_back(g);
+				}
+				else
+				{
+					g = camera.to_global(cell.x, cell.y, cell.z, cell.glyph, cell.baseColor, font);
+					if (g.orig.z != -1) glyphs.push_back(g);
+					if (cell.glyph == '#')
+					{
+						g = camera.to_global(cell.x, cell.y, cell.z + 0.4, cell.glyph, cell.baseColor, font);
+						if (g.orig.z != -1) glyphs.push_back(g);
+						g = camera.to_global(cell.x, cell.y, cell.z + 0.8, cell.glyph, cell.baseColor, font);
+						if (g.orig.z != -1) glyphs.push_back(g);
+					}
+				}
+			}	
 		}
 		
 		//Z-sorting
@@ -254,15 +357,15 @@ int main()
 		states.texture = &font.getTexture(128);
 		window.draw(camera.m_vertices,states );
 	
-		sf::VertexArray lines(sf::LinesStrip, 2);
-		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
-		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
+		//sf::VertexArray lines(sf::LinesStrip, 2);
+		//lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
+		//lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
-		window.draw(lines);
+		//window.draw(lines);
 
-		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
-		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
-		window.draw(lines);
+		//lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
+		//lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
+		//window.draw(lines);
 		window.display();
 	}
 

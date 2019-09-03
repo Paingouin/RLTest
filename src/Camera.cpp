@@ -15,7 +15,7 @@ struct Camera
 	float MouseSensitivity;
 	float Zoom;
 
-	float fov = 70.0f;
+	float fov = 90.0f;
 	//double S = 1.0 / (glm::tan(fov / 2.0));
 	float near = 0.1f;
 	float far = 100.f;
@@ -29,9 +29,12 @@ struct Camera
 	glm::mat4 mRotate;
 	glm::mat4 mView;
 	glm::mat4 mProjection;
+	glm::mat4 mModelView;
 	glm::mat4 mTotal;
 
 	sf::VertexArray m_vertices;
+
+
 
 	// Calculates the front vector from the Camera's (updated) Euler Angles
 	void updateCameraVectors(glm::vec3 target)
@@ -72,7 +75,7 @@ struct Camera
 
 		// calculate the model matrix for each object and pass  before drawing
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
-		model = mTranslate*mScale ;
+		model = mTranslate*mScale ; //translation*rotation*scale
 		glm::vec4 camPos = {(float) Position.x , (float)Position.y ,(float)Position.z  , 1.f };
 		glm::vec4 tarPos = { (float) target.x  , (float)target.y , (float)target.z  , 1.f };
 
@@ -96,6 +99,7 @@ struct Camera
 
 		mProjection = glm::perspectiveRH_NO(glm::radians(fov), viewport[2] / viewport[3], near, far);
 		mTotal = mProjection * mView  * model;
+		mModelView = mView * model; //now we can use the camera View space (so in2d from the camera)
 
 	}
 
@@ -147,12 +151,12 @@ struct Camera
 		//glm::vec4 RB = { orig.x + 0.5 , orig.y - 0.5, orig.z ,1.f };
 		//glm::vec4 LB = { orig.x - 0.5 , orig.y - 0.5, orig.z ,1.f };
 
-		glm::vec4 LU = orig -  camRight * 0.6f *0.5f +  camUp * 0.6f * 0.5f;
-		glm::vec4 RU = orig +  camRight * 0.6f *0.5f +   camUp * 0.6f * 0.5f;
-		glm::vec4 RB = orig +  camRight * 0.6f *0.5f -  camUp * 0.6f * 0.5f;
-		glm::vec4 LB = orig -  camRight * 0.6f *0.5f -  camUp * 0.6f * 0.5f;
+		glm::vec4 LU = orig - (camRight - camUp) * 0.6f * 0.5f;
+		glm::vec4 RU = orig + (camRight + camUp) * 0.6f * 0.5f;
+		glm::vec4 RB = orig + (camRight - camUp) * 0.6f * 0.5f;
+		glm::vec4 LB = orig - (camRight + camUp) * 0.6f * 0.5f;
 	    
-		LU -= orig;
+		/*LU -= orig;
 		RU -= orig;
 		RB -= orig;
 		LB -= orig;
@@ -165,7 +169,7 @@ struct Camera
 		LU += orig;
 		RU += orig;
 		RB += orig;
-		LB += orig;
+		LB += orig;*/
 
 		
 		LU = mTotal * LU;
@@ -252,3 +256,129 @@ struct Camera
 	}
 
 };
+
+/* NOT USED, but in case of
+	sf::Shader shader;
+
+
+	//#version 150
+	//	in vec4 gl3D_Position;
+	//in vec4 gl_Color;
+
+	//// GLSL Hacker automatic uniforms:
+	//uniform mat4 gl3d_ModelViewMatrix;
+
+	//out Vertex
+	//{
+	//  vec4 color;
+	//} vertex;
+
+	//void main()
+	//{
+	//	gl_Position = gxl3d_ModelViewMatrix * gxl3d_Position;
+	//	vertex.color = gxl3d_Color;
+	//}
+
+	const std::string vertexShader = \
+		//
+		//"uniform mat4 gl_ModelViewMatrix; "\
+
+		"out Vertex "\
+		"{"\
+		"  vec4 color; "\
+		"} vertex;"\
+
+		"void main() "\
+		"{"\
+		"	gl_Position = gl_ModelViewMatrix * gl_Position; "\
+		"	vertex.color = gl_Color; "\
+		"} ";
+
+	//#version 150
+
+	//	layout(points) in;
+	//layout(triangle_strip) out;
+	//layout(max_vertices = 4) out;
+
+	//// GLSL Hacker automatic uniforms:
+	//uniform mat4 gxl3d_ProjectionMatrix;
+
+	//uniform float particle_size;
+
+	//in Vertex
+	//{
+	//  vec4 color;
+	//} vertex[];
+
+
+	//out vec2 Vertex_UV;
+	//out vec4 Vertex_Color;
+
+	//void main(void)
+	//{
+	//	vec4 P = gl_in[0].gl_Position;
+
+	//	// a: left-bottom
+	//	vec2 va = P.xy + vec2(-0.5, -0.5) * particle_size;
+	//	gl_Position = gxl3d_ProjectionMatrix * vec4(va, P.zw);
+	//	Vertex_UV = vec2(0.0, 0.0);
+	//	Vertex_Color = vertex[0].color;
+	//	EmitVertex();
+
+	//	// b: left-top
+	//	vec2 vb = P.xy + vec2(-0.5, 0.5) * particle_size;
+	//	gl_Position = gxl3d_ProjectionMatrix * vec4(vb, P.zw);
+	//	Vertex_UV = vec2(0.0, 1.0);
+	//	Vertex_Color = vertex[0].color;
+	//	EmitVertex();
+
+	//	// d: right-bottom
+	//	vec2 vd = P.xy + vec2(0.5, -0.5) * particle_size;
+	//	gl_Position = gxl3d_ProjectionMatrix * vec4(vd, P.zw);
+	//	Vertex_UV = vec2(1.0, 0.0);
+	//	Vertex_Color = vertex[0].color;
+	//	EmitVertex();
+
+	//	// c: right-top
+	//	vec2 vc = P.xy + vec2(0.5, 0.5) * particle_size;
+	//	gl_Position = gxl3d_ProjectionMatrix * vec4(vc, P.zw);
+	//	Vertex_UV = vec2(1.0, 1.0);
+	//	Vertex_Color = vertex[0].color;
+	//	EmitVertex();
+
+	//	EndPrimitive();
+	//}
+	const std::string geometryShader = \
+		"#version 330 core \n"\
+		"layout (points) in; "\
+		"layout (triangle_strip,max_vertices = 4) out; "\
+		"void main() " \
+		"{ " \
+		"    vec4 P = gl_in[0].gl_Position; "\
+		"} ";
+
+	//#version 150
+	//	uniform sampler2D tex0;
+	//in vec2 Vertex_UV;
+	//in vec4 Vertex_Color;
+	//out vec4 FragColor;
+	//void main(void)
+	//{
+	//	vec2 uv = Vertex_UV.xy;
+	//	uv.y *= -1.0;
+	//	vec3 t = texture(tex0, uv).rgb;
+	//	FragColor = vec4(t, 1.0) * Vertex_Color;
+	//}
+
+	const std::string fragmentShader = \
+		"uniform sampler2D texture;"\
+		"void main()" \
+		"{" \
+
+		"	 vec4 pixel = texture2D(texture, gl_TexCoord[0].xy);" \
+		"	 gl_FragColor = gl_Color * pixel;" \
+		"}";
+
+	sf::VertexArray m_vertices;
+
+*/
