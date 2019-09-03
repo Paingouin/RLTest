@@ -28,7 +28,7 @@ struct Entity
 struct Cell
 {
 	bool block = false;
-	bool visible = false;
+	bool visible = true;
 
 	char glyph;
 	float x, y, z;
@@ -146,7 +146,7 @@ void calculateFOV(std::vector<Cell>& map,  int startX, int startY, float radius)
 {
 	for (Cell& cell : map)
 	{
-		cell.visible = false;
+		cell.visible = true;
 	}
 
 	map[startX + startY * 18].visible = true;
