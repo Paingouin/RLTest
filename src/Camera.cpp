@@ -159,9 +159,6 @@ struct Camera
 		RB = mProjection * RB;
 		LB = mProjection * LB;
 		
-
-
-
 		//if ((LU.z > -1.f && LU.z < 1.f)&&(RU.z > -1.f && RU.z < 1.f)&& (RB.z > -1.f && RB.z < 1.f) && (LB.z > -1.f && LB.z < 1.f)) //culling
 		//{
 			LU /= LU.w;
