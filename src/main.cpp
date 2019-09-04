@@ -171,7 +171,7 @@ int main()
 	sf::ContextSettings settings;
 	settings.depthBits = 24;
 	settings.stencilBits = 8;
-	settings.antialiasingLevel = 4;
+	settings.antialiasingLevel = 0;
 	settings.majorVersion = 3;
 	settings.minorVersion = 2;
 
@@ -352,20 +352,21 @@ int main()
 			camera.m_vertices.append(glyph.vertices[3]);
 
 		}
+		std::cout << glyphs.size() << std::endl;
 
 		sf::RenderStates states;
 		states.texture = &font.getTexture(128);
 		window.draw(camera.m_vertices,states );
 	
-		//sf::VertexArray lines(sf::LinesStrip, 2);
-		//lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
-		//lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
+		sf::VertexArray lines(sf::LinesStrip, 2);
+		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
+		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
-		//window.draw(lines);
+		window.draw(lines);
 
-		//lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
-		//lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
-		//window.draw(lines);
+		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
+		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
+		window.draw(lines);
 		window.display();
 	}
 
