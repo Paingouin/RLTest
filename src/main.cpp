@@ -39,6 +39,8 @@ struct Cell
 };
 
 //TODO :
+//		
+//      Timestep
 //		FOV
 //		Light
 //      
@@ -358,7 +360,7 @@ int main()
 		states.texture = &font.getTexture(128);
 		window.draw(camera.m_vertices,states );
 	
-		sf::VertexArray lines(sf::LinesStrip, 2);
+		/*sf::VertexArray lines(sf::LinesStrip, 2);
 		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
 		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
@@ -366,7 +368,7 @@ int main()
 
 		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
 		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
-		window.draw(lines);
+		window.draw(lines);*/
 		window.display();
 	}
 
