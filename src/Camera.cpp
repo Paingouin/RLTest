@@ -157,7 +157,7 @@ struct Camera
 		s = glm::sin(glm::radians((180-Pitch )));
 		c = glm::cos(glm::radians((180-Pitch )));
 	
-		glm::vec4 pos = mModelView* orig* 1.5f;
+		glm::vec4 pos = mModelView* orig* 1.8f;
 
 		glm::vec4 LU = {  - 0.5,     0.5, pos.z ,1.f };
 		glm::vec4 RU = {    0.5,     0.5, pos.z ,1.f };
@@ -209,7 +209,9 @@ struct Camera
 			LB.y = (viewport[3] / 2 - (LB.y * viewport[3]));
 
 			orig = mTotal * orig;
-			orig.z /= orig.w;
+
+			orig.z /= orig.w; //use z of origin to put something on top
+
 			//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
 			//orig.x /= orig.w;
 			//orig.y /= orig.w;
@@ -228,14 +230,19 @@ struct Camera
 			quad3.position = sf::Vector2f(RB.x, RB.y);
 			quad4.position = sf::Vector2f(LB.x, LB.y);
 
-			//TODO(Generate these at start in hashmap)
-			sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
+
+			//sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
 
 			// define its 4 texture coordinates
-			quad1.texCoords = sf::Vector2f(textcoor.left ,textcoor.top );
-			quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
-			quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
-			quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
+			//quad1.texCoords = sf::Vector2f(textcoor.left ,textcoor.top );
+			//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
+			//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
+			//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
+
+			quad1.texCoords = sf::Vector2f( (glyph- 31)*128 ,  9);
+			quad2.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 9);
+			quad3.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 138);
+			quad4.texCoords = sf::Vector2f((glyph - 31) * 128, 138);
 
 			quad1.color = color;
 			quad2.color = color;

@@ -6,7 +6,7 @@ struct GameConfig
 	const float PITCH = 0.0f;
 	const float SPEED = 2.5f;
 	const float SENSITIVITY = 0.5f;
-	const float ZOOM = 10.0f;
+	const float ZOOM = 30.0f;
 
 	int winWidth = 1280;
 	int winHeight = 760;
@@ -39,16 +39,13 @@ struct Cell
 };
 
 //TODO :
-//		
+//		Culling
 //      Timestep
+//      LinTerp for camera movement
 //		FOV
 //		Light
 //      
-//		Timestep
-//      LinTerp for camera movement
 //		LinLerp for animation
-
-//"angle" of the keypress, subtract the camera Z rotation, find the nearest matching direction
 
 
 struct Controller
@@ -171,14 +168,17 @@ int main()
 	GameConfig gc;
 
 	sf::ContextSettings settings;
-	settings.depthBits = 24;
-	settings.stencilBits = 8;
+	settings.depthBits = 0;
+	settings.stencilBits = 0;
 	settings.antialiasingLevel = 0;
 	settings.majorVersion = 3;
 	settings.minorVersion = 2;
 
 
 	sf::RenderWindow  window(sf::VideoMode(gc.winWidth, gc.winHeight), "RL test", sf::Style::Default, settings);
+	//sf::RenderTexture windowTexture;
+	//windowTexture.create(gc.winWidth, gc.winHeight);
+
 	window.setActive(true);
 	float lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
 	bool firstMouse = true;
@@ -188,13 +188,28 @@ int main()
 
 
 	sf::Font font;
-	if (!font.loadFromFile("nasalization-rg.ttf"))
+	if (!font.loadFromFile("square.ttf"))
 	{
 		// error...
 	}
 
-	const sf::Texture& texture = font.getTexture(48);
 
+	sf::String fontText;
+	for (int i = 31; i < 100; ++i)
+	{
+		fontText.insert(fontText.getSize(),(char)i);
+	}
+	std::cout << std::string(fontText) << std::endl;
+
+	sf::Text fontTxt(fontText, font, 128);
+	float width = fontTxt.findCharacterPos(35).x - fontTxt.findCharacterPos(34).x;
+	std::cout << std::string(fontText) <<  "\n" << width <<  "\n" << fontTxt.getCharacterSize() << std::endl;
+	fontTxt.setOutlineThickness(1);
+	fontTxt.setPosition(0, 0);
+	sf::RenderTexture rdTexture;
+	rdTexture.create(128*100, 138);
+	rdTexture.draw(fontTxt);
+	rdTexture.display();
 
 	//MAP
 	std::vector<Cell> map = genRectangleRoom();
@@ -223,6 +238,8 @@ int main()
 	camera.Zoom = gc.ZOOM;
 	camera.viewport = {0.0f, 0.0f, (float)gc.winWidth , (float)gc.winHeight};
 	// run the program as long as the window is open
+
+
 	bool moved = true;
 	while (window.isOpen())
 	{
@@ -291,7 +308,8 @@ int main()
 				
 				sf::FloatRect visibleArea(0, 0, event.size.width, event.size.height);
 				window.setView(sf::View(visibleArea));
-
+				//windowTexture.create(event.size.width, event.size.height);
+		
 				gc.winWidth = event.size.width;
 				gc.winHeight = event.size.height;
 
@@ -316,6 +334,8 @@ int main()
 		camera.m_vertices.clear();
 		camera.m_vertices.setPrimitiveType(sf::Quads);
 		window.clear(sf::Color::Black);
+		//windowTexture.clear(sf::Color::Black);
+
 		//Gen mapSprite(todo : based on fov) + (todo: light)
 		std::vector<Glyph> glyphs;
 		//GenGlyps
@@ -357,10 +377,10 @@ int main()
 		std::cout << glyphs.size() << std::endl;
 
 		sf::RenderStates states;
-		states.texture = &font.getTexture(128);
+		states.texture = &rdTexture.getTexture();
 		window.draw(camera.m_vertices,states );
-	
-		/*sf::VertexArray lines(sf::LinesStrip, 2);
+
+		sf::VertexArray lines(sf::LinesStrip, 2);
 		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
 		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
@@ -368,8 +388,18 @@ int main()
 
 		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
 		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
-		window.draw(lines);*/
+		window.draw(lines);
+		
+		sf::Sprite sprite(rdTexture.getTexture());
+		window.draw(sprite);
+
+		//window.setSmooth(true);
 		window.display();
+
+		
+		//sf::Sprite endWindow(windowTexture.getTexture());
+		//window.draw(endWindow);
+		//window.display();
 	}
 
 	return 0;
