@@ -22,8 +22,10 @@ project(RLTest)
 set (SOURCE_FILE 	        
 			./include/main.h
 			./include/stb_image.h
+			./ressources/Shaders/post.frag
 
 			./src/Camera.cpp
+			
 		   )
 
 add_executable(RLTestBin 
@@ -41,6 +43,8 @@ set_target_properties( RLTestBin
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+	VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}" 
+	WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}" 
 )
 
 include(build_options)
@@ -64,6 +68,11 @@ target_link_libraries(RLTestBin
 			${SDL2_LIBRARIES}
 			${SFML_LIBRARIES}
 			)
+			
+add_custom_command(TARGET RLTestBin POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_INSTALL_PREFIX}/ressources"
+       "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
 			
 
 	   
