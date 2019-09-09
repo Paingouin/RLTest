@@ -25,6 +25,7 @@ set (SOURCE_FILE
 			./ressources/Shaders/post.frag
 
 			./src/Camera.cpp
+			./src/timestep.cpp
 			
 		   )
 

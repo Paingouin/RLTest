@@ -1,4 +1,5 @@
 #include "Camera.cpp"
+#include "timestep.cpp"
 
 
 #define SHADER_FILENAME         "./Shaders/post.frag"
@@ -272,8 +273,14 @@ int main()
 
 
 	bool moved = true;
+	bool firstCam = true;
+	glm::vec3 target;
+	glm::vec3 targetDeplacement;
+	GameTimer timer;
+	timer.initialize();
 	while (window.isOpen())
 	{
+		timer.startRenderFrame();
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -349,16 +356,31 @@ int main()
 		}
 
 		player.z = map[player.x + player.y * 18].z;
-		glm::vec3 target = { player.x , player.y , player.z };
+		
+		if (firstCam)
+		{
+			camera.Position = { player.x , player.y , player.z };
+			target = { player.x , player.y , player.z };
+			targetDeplacement = target;
+			firstCam = false;
+		}
+
 		if (moved)
 		{
-			map[player.x + player.y * 18].ent = &player;
-			camera.Position = { player.x , player.y  , player.z };
-			camera.updateCameraVectors(target);
-			calculateFOV(map, player.x, player.y, 10);
-	
-			moved = false;
+			
+			target = { player.x , player.y , player.z };	
 		}
+
+		map[player.x + player.y * 18].ent = &player;
+
+		camera.Position = glm::mix(camera.Position , target , 0.05);
+		targetDeplacement = glm::mix(targetDeplacement, target, 0.05);
+
+		camera.updateCameraVectors(targetDeplacement);
+
+		calculateFOV(map, player.x, player.y, 10);
+
+		while (timer.doUpdate());
 
 		//PRE-RENDERING
 		camera.m_vertices.clear();
@@ -405,7 +427,7 @@ int main()
 			camera.m_vertices.append(glyph.vertices[3]);
 
 		}
-		std::cout << glyphs.size() << std::endl;
+		std::cout <<timer.getFPS() << std::endl;
 
 		
 		windowTexture.draw(camera.m_vertices, &asciiTexture.getTexture());  //Draw all the ascii sprites
@@ -432,6 +454,8 @@ int main()
 		window.draw(endWindow,&postEffect);
 
 		window.display();
+
+		timer.endRenderFrame();
 	}
 
 	return 0;

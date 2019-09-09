@@ -32,6 +32,8 @@ struct Camera
 	glm::mat4 mModelView;
 	glm::mat4 mTotal;
 
+	glm::vec3 posOffset;
+
 	sf::VertexArray m_vertices;
 
 	float s = glm::sin(glm::radians(Pitch));
@@ -43,12 +45,10 @@ struct Camera
 	void updateCameraVectors(glm::vec3 target)
 	{
 		// Calculate the new position of the camera
-		glm::vec3 posOffset;
+		
 		posOffset.x = Zoom * sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
 		posOffset.y = Zoom * sin(glm::radians(Pitch)) * sin(glm::radians(Yaw));
 		posOffset.z = Zoom * cos(glm::radians(Yaw));
-
-		Position += posOffset;
 
 		glm::mat4 mScale =
 		{
@@ -80,7 +80,7 @@ struct Camera
 		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
 	 //translation*rotation*scale
 	
-		glm::vec4 camPos = {(float) Position.x , (float)Position.y ,(float)Position.z  , 1.f };
+		glm::vec4 camPos = {(float) Position.x +posOffset.x , (float)Position.y + posOffset.y,(float)Position.z + posOffset.z  , 1.f };
 		glm::vec4 tarPos = { (float) target.x  , (float)target.y , (float)target.z  , 1.f };
 		camFront = { 0.0f, 0.0f,1.f};
 
