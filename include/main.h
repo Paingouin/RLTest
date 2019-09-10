@@ -8,6 +8,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "glm/glm.hpp"
 #include "glm/vec3.hpp" // glm::vec3
 #include "glm/vec4.hpp" // glm::vec4
 #include "glm/mat4x4.hpp" // glm::mat4
@@ -17,6 +18,8 @@
 #include "glm/gtx/transform.hpp"
 
 
+#define POST_SHADER_FILENAME         "./Shaders/post.frag"
+#define FONT_FILENAME			     "./Fonts/square.ttf"
 
 
 
@@ -41,7 +44,6 @@ typedef unsigned char asciiChar;
 
 */
 
-
 /*
 
  unsigned char *imgData = stbi_load(filename,
@@ -53,10 +55,6 @@ typedef unsigned char asciiChar;
 
 stbi_image_free(imgData);
 
-
-
-
-
 */
 
 // Helper macros for working with pixel colors
@@ -66,6 +64,47 @@ stbi_image_free(imgData);
 #define ALPHA(c) (c & 0xff)
 
 #define COLOR_FROM_RGBA(r, g, b, a) ((r << 24) | (g << 16) | (b << 8) | a)
+
+
+
+struct GameConfig
+{
+	const float YAW = -90.0f;
+	const float PITCH = 0.0f;
+	const float SPEED = 2.5f;
+	const float SENSITIVITY = 0.5f;
+	const float ZOOM = 30.0f;
+
+	int winWidth = 1280;
+	int winHeight = 760;
+
+};
+
+//GAME
+
+struct Entity
+{
+	char glyph;
+	float x, y, z;
+
+	sf::Color baseColor;
+};
+
+
+struct Cell
+{
+	bool block = false;
+	bool visible = true;
+
+	char glyph;
+	float x, y, z;
+
+	sf::Color baseColor;
+	Entity* ent = nullptr;
+
+};
+
+//Render
 
 struct Glyph
 {

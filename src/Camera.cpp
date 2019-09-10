@@ -157,7 +157,7 @@ struct Camera
 		s = glm::sin(glm::radians((180-Pitch )));
 		c = glm::cos(glm::radians((180-Pitch )));
 	
-		glm::vec4 pos = mModelView* orig* 1.8f;
+		glm::vec4 pos = mModelView* orig* 1.7f;
 
 		glm::vec4 LU = {  - 0.5,     0.5, pos.z ,1.f };
 		glm::vec4 RU = {    0.5,     0.5, pos.z ,1.f };

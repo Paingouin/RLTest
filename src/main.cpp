@@ -1,55 +1,35 @@
 #include "Camera.cpp"
 #include "timestep.cpp"
 
+/*
 
-#define SHADER_FILENAME         "./Shaders/post.frag"
+GAME===>		  <===  Main   ===>	    <= Plateform
+											=>Renderer		
+=>GameState									=>Camera
+=>Controller							
+								
+=>Cell
+	=>Entity																					
+														
 
-struct GameConfig
-{
-	const float YAW = -90.0f;
-	const float PITCH = 0.0f;
-	const float SPEED = 2.5f;
-	const float SENSITIVITY = 0.5f;
-	const float ZOOM = 30.0f;
+Plateform must receive only glyph+pos+color and send controller input to main
 
-	int winWidth = 1280;
-	int winHeight = 760;
+*/
 
-};
-
-
-
-struct Entity
-{
-	char glyph;
-	float x, y, z;
-
-	sf::Color baseColor;
-};
-
-
-struct Cell
-{
-	bool block = false;
-	bool visible = true;
-
-	char glyph;
-	float x, y, z;
-
-	sf::Color baseColor;
-	Entity* ent = nullptr;
-
-};
 
 //TODO :
 //		Culling
-//      Timestep
-//      LinTerp for camera movement
+//		refactor
+//		UI
 //		FOV
 //		Light
 //      
-//		LinLerp for animation
-//		Shader ?
+//		Shader
+//
+//		Basic dungeon generation/basic 
+//
+//		Basic monster
+//		Mouse picking AABB for each vertices = rotate the mouse pos by invert rectangle
 
 
 struct Controller
@@ -189,11 +169,11 @@ int main()
 	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
-	window.setFramerateLimit(60);
+	//window.setFramerateLimit(60);
 
 
 	sf::Font font;
-	if (!font.loadFromFile("./Fonts/square.ttf"))
+	if (!font.loadFromFile(FONT_FILENAME))
 	{
 		// error...
 	}
@@ -206,7 +186,24 @@ int main()
 	}
 	std::cout << std::string(fontText) << std::endl;
 
+	//Load Texture ASCII
+	sf::Text fontTxt(fontText, font, 128);
+	float width = fontTxt.findCharacterPos(35).x - fontTxt.findCharacterPos(34).x;
+	//std::cout << std::string(fontText) <<  "\n" << width <<  "\n" << fontTxt.getCharacterSize() << std::endl;
+	fontTxt.setOutlineThickness(3);
+	fontTxt.setPosition(0, 0);
 
+	sf::RenderTexture asciiTexture;
+	asciiTexture.create(128*100, 138);
+	asciiTexture.setSmooth(true);
+	asciiTexture.draw(fontTxt);
+	asciiTexture.display();
+	asciiTexture.generateMipmap();
+
+	sf::RenderTexture windowTexture;
+	windowTexture.create(gc.winWidth, gc.winHeight);
+	//windowTexture.setSmooth(true);
+	
 	// Check if shaders are available
 	if (!sf::Shader::isAvailable())
 	{
@@ -216,32 +213,11 @@ int main()
 
 	// Load shaders
 	sf::Shader postEffect;
-	if (!postEffect.loadFromFile(SHADER_FILENAME, sf::Shader::Fragment))
+	if (!postEffect.loadFromFile(POST_SHADER_FILENAME, sf::Shader::Fragment))
 	{
 		std::cerr << "Error while loading shaders" << std::endl;
 		return -1;
 	}
-
-
-
-	//Load Texture ASCII
-	sf::Text fontTxt(fontText, font, 128);
-	float width = fontTxt.findCharacterPos(35).x - fontTxt.findCharacterPos(34).x;
-	std::cout << std::string(fontText) <<  "\n" << width <<  "\n" << fontTxt.getCharacterSize() << std::endl;
-	fontTxt.setOutlineThickness(1);
-	fontTxt.setPosition(0, 0);
-
-	sf::RenderTexture asciiTexture;
-	asciiTexture.create(128*100, 138);
-	asciiTexture.draw(fontTxt);
-
-	asciiTexture.setSmooth(true);
-	asciiTexture.display();
-
-	sf::RenderTexture windowTexture;
-	windowTexture.create(gc.winWidth, gc.winHeight);
-	//windowTexture.setSmooth(true);
-	
 
 	//MAP
 	std::vector<Cell> map = genRectangleRoom();
@@ -373,8 +349,10 @@ int main()
 
 		map[player.x + player.y * 18].ent = &player;
 
-		camera.Position = glm::mix(camera.Position , target , 0.05);
-		targetDeplacement = glm::mix(targetDeplacement, target, 0.05);
+
+		//wheighted avarege : v = ((v * (N - 1)) + w) / N; fast at start but decrease 
+		camera.Position = ((camera.Position * (18.f -1.f)) + target) / 18.f;
+		targetDeplacement = ((targetDeplacement * (18.f - 1.f)) + target) / 18.f;
 
 		camera.updateCameraVectors(targetDeplacement);
 
@@ -432,20 +410,19 @@ int main()
 		
 		windowTexture.draw(camera.m_vertices, &asciiTexture.getTexture());  //Draw all the ascii sprites
 
-		//sf::VertexArray lines(sf::LinesStrip, 2);
-		//lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
-		//lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
+		sf::VertexArray lines(sf::LinesStrip, 2);
+		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
+		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
-		//windowTexture.draw(lines);
+		windowTexture.draw(lines);
 
-		//lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
-		//lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
-		//windowTexture.draw(lines);
+		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
+		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
+		windowTexture.draw(lines);
 
 
 		//sf::Sprite sprite(asciiTexture.getTexture());
 		//windowTexture.draw(sprite);
-		
 		windowTexture.display();
 		
 		//draw to windows
@@ -454,6 +431,8 @@ int main()
 		window.draw(endWindow,&postEffect);
 
 		window.display();
+
+		//UI
 
 		timer.endRenderFrame();
 	}
