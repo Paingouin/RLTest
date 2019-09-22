@@ -3,22 +3,23 @@
 
 /*
 
-GAME===>		  <===  Main   ===>	    <= Plateform
-											=>Renderer		
-=>GameState									=>Camera
-=>Controller							
+One main per plateform.
+
+GAME===>		  <===  Main	 <= Plateform
+										=>Renderer		
+=>GameState								=>Camera
+=>Controller							=>Audio
 								
 =>Cell
 	=>Entity																					
 														
 
-Plateform must receive only glyph+pos+color and send controller input to main
+Plateform must receive only map(pos+color + state of effects) and send controller input to the game
 
 */
 
 
 //TODO :
-//		Culling
 //		refactor
 //		UI
 //		FOV
@@ -29,7 +30,7 @@ Plateform must receive only glyph+pos+color and send controller input to main
 //		Basic dungeon generation/basic 
 //
 //		Basic monster
-//		Mouse picking AABB for each vertices = rotate the mouse pos by invert rectangle
+//		Mouse picking :  check inside UI, if not , check inside rect for each glyph = rotate the mouse pos by invert rectangle
 
 
 struct Controller
@@ -37,13 +38,40 @@ struct Controller
 	int32 lastPosMouseX, lastPosMouseZ;
 };
 
+void renderGlyphs(std::vector<Cell>::iterator begin, std::vector<Cell>::iterator end, std::vector<Cell>& map, Camera& camera , std::vector<Glyph>& glyphs)
+{
+	for (std::vector<Cell>::iterator& cell = begin; begin != end; ++cell)
+	{
+		Glyph g;
+		if (cell->visible == true)
+		{
+			if (cell->ent != nullptr)
+			{
+				g = camera.to_global(cell->ent->x, cell->ent->y, cell->ent->z, cell->ent->glyph, cell->ent->baseColor);
+				if (g.orig.z != -1) glyphs.push_back(g);
+			}
+			else
+			{
+				g = camera.to_global(cell->x, cell->y, cell->z, cell->glyph, cell->baseColor);
+				if (g.orig.z != -1) glyphs.push_back(g);
+				if (cell->glyph == '#')
+				{
+					g = camera.to_global(cell->x, cell->y, cell->z + 0.4, cell->glyph, cell->baseColor);
+					if (g.orig.z != -1) glyphs.push_back(g);
+					g = camera.to_global(cell->x, cell->y, cell->z + 0.8, cell->glyph, cell->baseColor);
+					if (g.orig.z != -1) glyphs.push_back(g);
+				}
+			}
+		}
+	}
+}
 
 std::vector<Cell> genRectangleRoom()
 {
 	std::vector<Cell> list;
-	for (int y = 0; y <18; ++y)
+	for (int y = 0; y <25; ++y)
 	{
-		for (int x = 0; x < 18; ++x)
+		for (int x = 0; x < 25; ++x)
 		{
 			Cell cell;
 			if ((x == 0 || x == 17) || (y == 0 || y == 17))
@@ -59,24 +87,24 @@ std::vector<Cell> genRectangleRoom()
 			}
 			cell.x = x;
 			cell.y = y;
-			cell.baseColor = sf::Color(200 - x + y * 18, 100 - x + y * 18, 200, 255);
+			cell.baseColor = sf::Color(200 - x + y * 25, 100 - x + y * 25, 200, 255);
 			list.push_back(cell);
 		}
 	}
 
-	list[6 + 6 * 18].glyph = '#';
-	list[6 + 6 * 18].block = true;
+	list[6 + 6 * 25].glyph = '#';
+	list[6 + 6 * 25].block = true;
 
-	list[8 + 12 * 18].glyph = '#';
-	list[8 + 12 * 18].block = true;
+	list[8 + 12 * 25].glyph = '#';
+	list[8 + 12 * 25].block = true;
 	return list;
 }
 
 
 
-void castLight(std::vector<Cell>& map, int row, int startX, int startY, float start, float end, int xx, int xy, int yx, int yy, float radius)
+void castLight(std::vector<Cell>& map, int row, int startX, int startY, double start, double end, int xx, int xy, int yx, int yy, double radius)
 {
-	float newStart = 0.0f;
+	double newStart = 0.0f;
 	if (start < end) {
 		return;
 	}
@@ -86,10 +114,10 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, float st
 		for (int deltaX = -distance; deltaX <= 0; deltaX++) {
 			int currentX = startX + deltaX * xx + deltaY * xy;
 			int currentY = startY + deltaX * yx + deltaY * yy;
-			float leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
-			float rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
+			double leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
+			double rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
 
-			if (!(currentX >= 0 && currentY >= 0 && currentX < 18 && currentY < 18) || start < rightSlope) {
+			if (!(currentX >= 0 && currentY >= 0 && currentX < 25 && currentY < 25) || start < rightSlope) {
 				continue;
 			}
 			else if (end > leftSlope) {
@@ -99,13 +127,13 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, float st
 			//check if it's within the lightable area and light if needed
 			if ((deltaX * deltaX) + (deltaY * deltaY) <
 			((radius - 3) * (radius - 3))) {
-				//float bright = (float)(1 - (rStrat.radius(deltaX, deltaY) / radius));
-				map[currentX + currentY * 18].visible = true;
+				//double bright = (double)(1 - (rStrat.radius(deltaX, deltaY) / radius));
+				map[currentX + currentY * 25].visible = true;
 			}
 		
 
 			if (blocked) { //previous cell was a blocking one
-				if (map[currentX + currentY * 18].block >= 1) {//hit a wall
+				if (map[currentX + currentY * 25].block >= 1) {//hit a wall
 					newStart = rightSlope;
 					continue;
 				}
@@ -115,7 +143,7 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, float st
 				}
 			}
 			else {
-				if (map[currentX + currentY * 18].block >= 1 && distance < radius) {//hit a wall within sight line
+				if (map[currentX + currentY * 25].block >= 1 && distance < radius) {//hit a wall within sight line
 					blocked = true;
 					castLight(map, distance + 1, startX, startY, start, leftSlope, xx, xy, yx, yy, radius);
 					newStart = rightSlope;
@@ -126,14 +154,14 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, float st
 }
 
 //radius: max distance FOV;
-void calculateFOV(std::vector<Cell>& map,  int startX, int startY, float radius)
+void calculateFOV(std::vector<Cell>& map,  int startX, int startY, double radius)
 {
 	for (Cell& cell : map)
 	{
 		cell.visible = true;
 	}
 
-	map[startX + startY * 18].visible = true;
+	map[startX + startY * 25].visible = true;
 	
 	//For each diagonals
 	castLight(map, 1, startX , startY, 1.0f, 0.0f, 0, -1, 1, 0, radius);
@@ -155,7 +183,7 @@ int main()
 	sf::ContextSettings settings;
 	//settings.depthBits = 0;
 	//settings.stencilBits = 0;
-	settings.antialiasingLevel =8;
+	settings.antialiasingLevel = 0;
 	settings.majorVersion = 3;
 	settings.minorVersion = 2;
 
@@ -165,11 +193,11 @@ int main()
 	//windowTexture.create(gc.winWidth, gc.winHeight);
 
 	window.setActive(true);
-	float lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
+	double lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
 	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
-	//window.setFramerateLimit(60);
+	window.setFramerateLimit(60);
 
 
 	sf::Font font;
@@ -188,7 +216,7 @@ int main()
 
 	//Load Texture ASCII
 	sf::Text fontTxt(fontText, font, 128);
-	float width = fontTxt.findCharacterPos(35).x - fontTxt.findCharacterPos(34).x;
+	double width = fontTxt.findCharacterPos(35).x - fontTxt.findCharacterPos(34).x;
 	//std::cout << std::string(fontText) <<  "\n" << width <<  "\n" << fontTxt.getCharacterSize() << std::endl;
 	fontTxt.setOutlineThickness(3);
 	fontTxt.setPosition(0, 0);
@@ -232,7 +260,7 @@ int main()
 		,sf::Color(255, 255, 255, 255)
 	};
 
-	map[3 + 3 * 18].ent = &player;
+	map[3 + 3 * 25].ent = &player;
 
 	player.x = 3;
 	player.y = 3;
@@ -244,7 +272,7 @@ int main()
 	camera.MovementSpeed = gc.SPEED;
 	camera.MouseSensitivity = gc.SENSITIVITY;
 	camera.Zoom = gc.ZOOM;
-	camera.viewport = {0.0f, 0.0f, (float)gc.winWidth , (float)gc.winHeight};
+	camera.viewport = {0.0f, 0.0f, (double)gc.winWidth , (double)gc.winHeight};
 	// run the program as long as the window is open
 
 
@@ -254,6 +282,10 @@ int main()
 	glm::vec3 targetDeplacement;
 	GameTimer timer;
 	timer.initialize();
+
+	std::vector<Glyph> glyphs;
+	glyphs.reserve(1000);
+
 	while (window.isOpen())
 	{
 		timer.startRenderFrame();
@@ -266,28 +298,28 @@ int main()
 				window.close();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				map[player.x + player.y * 18].ent = nullptr;
+				map[player.x + player.y * 25].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				map[player.x + player.y * 18].ent = nullptr;
+				map[player.x + player.y * 25].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
-				map[player.x + player.y * 18].ent = nullptr;
+				map[player.x + player.y * 25].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch+180)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch+180)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
-				map[player.x + player.y * 18].ent = nullptr;
+				map[player.x + player.y * 25].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch )));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch )));
 				moved = true;
@@ -303,8 +335,8 @@ int main()
 					firstMouse = false;
 				}
 
-				float xoffset = event.mouseMove.x - lastX;
-				float yoffset = lastY - event.mouseMove.y; // reversed since y-coordinates go from bottom to top
+				double xoffset = event.mouseMove.x - lastX;
+				double yoffset = lastY - event.mouseMove.y; // reversed since y-coordinates go from bottom to top
 
 				lastX = event.mouseMove.x;
 				lastY = event.mouseMove.y;
@@ -326,12 +358,12 @@ int main()
 				window.setView(sf::View(visibleArea));
 				windowTexture.create(gc.winWidth, gc.winHeight);
 
-				camera.viewport = { 0.0f, 0.0f, (float)gc.winWidth, (float)gc.winHeight };
+				camera.viewport = { 0.0f, 0.0f, (double)gc.winWidth, (double)gc.winHeight };
 				moved = true;
 			}
 		}
 
-		player.z = map[player.x + player.y * 18].z;
+		player.z = map[player.x + player.y * 25].z;
 		
 		if (firstCam)
 		{
@@ -347,12 +379,12 @@ int main()
 			target = { player.x , player.y , player.z };	
 		}
 
-		map[player.x + player.y * 18].ent = &player;
+		map[player.x + player.y * 25].ent = &player;
 
 
 		//wheighted avarege : v = ((v * (N - 1)) + w) / N; fast at start but decrease 
-		camera.Position = ((camera.Position * (18.f -1.f)) + target) / 18.f;
-		targetDeplacement = ((targetDeplacement * (18.f - 1.f)) + target) / 18.f;
+		camera.Position = ((camera.Position * (17.f -1.f)) + target) / 17.f;
+		targetDeplacement = ((targetDeplacement * (17.f - 1.f)) + target) / 17.f;
 
 		camera.updateCameraVectors(targetDeplacement);
 
@@ -367,36 +399,25 @@ int main()
 		window.clear(sf::Color::Black);
 		windowTexture.clear(sf::Color::Black);
 
+		glyphs.clear();
+
 		//Gen mapSprite(todo : based on fov) + (todo: light)
-		std::vector<Glyph> glyphs;
+
 		//GenGlyps
-		for (Cell& cell : map)
-		{ 
-			Glyph g;
-			if(cell.visible == true)
-			{
-				if (cell.ent != nullptr)
-				{
-					g = camera.to_global(cell.ent->x, cell.ent->y, cell.ent->z, cell.ent->glyph, cell.ent->baseColor, font);
-					if (g.orig.z != -1) glyphs.push_back(g);
-				}
-				else
-				{
-					g = camera.to_global(cell.x, cell.y, cell.z, cell.glyph, cell.baseColor, font);
-					if (g.orig.z != -1) glyphs.push_back(g);
-					if (cell.glyph == '#')
-					{
-						g = camera.to_global(cell.x, cell.y, cell.z + 0.4, cell.glyph, cell.baseColor, font);
-						if (g.orig.z != -1) glyphs.push_back(g);
-						g = camera.to_global(cell.x, cell.y, cell.z + 0.8, cell.glyph, cell.baseColor, font);
-						if (g.orig.z != -1) glyphs.push_back(g);
-					}
-				}
-			}	
-		}
+
+		//std::thread t1(renderGlyphs, map.begin(), map.end()- (map.size()/2), map, camera, std::ref(glyphs));
+		//std::thread t2(renderGlyphs, map.end() - (map.size() / 2), map.end(), map, camera, std::ref(glyphPart2));
+		renderGlyphs(map.begin(), map.end(), map, camera, std::ref(glyphs));
+
+
+		//t1.join();
+		//t2.join();
+		
+		//glyphs.insert(glyphs.end(), glyphPart2.begin(), glyphPart2.end());
 		
 		//Z-sorting
 		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.orig.z > b.orig.z; });
+
 		for (Glyph& glyph : glyphs)
 		{
 			camera.m_vertices.append(glyph.vertices[0]);
@@ -405,9 +426,9 @@ int main()
 			camera.m_vertices.append(glyph.vertices[3]);
 
 		}
-		std::cout <<timer.getFPS() << std::endl;
+		std::cout << timer.getFPS() << std::endl;
+		std::cout << glyphs.size() << std::endl;
 
-		
 		windowTexture.draw(camera.m_vertices, &asciiTexture.getTexture());  //Draw all the ascii sprites
 
 		sf::VertexArray lines(sf::LinesStrip, 2);
@@ -421,7 +442,8 @@ int main()
 		windowTexture.draw(lines);
 
 
-		//sf::Sprite sprite(asciiTexture.getTexture());
+		//sf::Sprite sprite(asciiTexture.getTexture());c++ runtime checks
+
 		//windowTexture.draw(sprite);
 		windowTexture.display();
 		
@@ -434,6 +456,9 @@ int main()
 
 		//UI
 
+
+		//TIMER
+		timer.sleepAfterRender();
 		timer.endRenderFrame();
 	}
 

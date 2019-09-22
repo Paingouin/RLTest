@@ -51,8 +51,8 @@ struct GameTimer
 	sf::Clock time;
 
 
-	double timeGame = 1000000.0 / 60.f; //GAME_LIMIT
-	double timeRender = 1000000.0 / 60.0f; //FPS_LIMIT
+	double dtimeGame = 1000000.0 / 60.f; //GAME_LIMIT
+	double dtimeRender = 1000000.0 / 60.0f; //FPS_LIMIT
 	double lag = 0;
 	uint32 deltaTime;
 	int timestepMode;
@@ -73,8 +73,8 @@ struct GameTimer
 	void initialize()
 	{
 		timestepMode = FIXED_TIMESTEP;
-		timeGame = 1000000.0 / 60.f; //nbOfMicrosec per update
-		timeRender = 1000000.0 / 60.f;//nbOfMicrosec per frame
+		dtimeGame = 1000000.0 / 60.f; //nbOfMicrosec per update
+		dtimeRender = 1000000.0 / 60.f;//nbOfMicrosec per frame
 		lag = 0.0F;
 
 		timeLastFrame = time.getElapsedTime();
@@ -88,7 +88,7 @@ struct GameTimer
 		deltaTime = timeCurrentFrame.asMicroseconds() - timeLastFrame.asMicroseconds();
 		
 		//Prevent spiral of death
-		if (deltaTime > timeGame * 5) deltaTime = timeGame * 5;
+		if (deltaTime > dtimeGame * 5) deltaTime = dtimeGame * 5;
 
 		lag += deltaTime;
 	}
@@ -100,9 +100,9 @@ struct GameTimer
 
 	int doUpdate()
 	{
-		if (lag >= timeGame)
+		if (lag >= dtimeGame)
 		{
-			lag -= timeGame;
+			lag -= dtimeGame;
 			return 1;
 		}
 		return 0;
@@ -119,19 +119,19 @@ struct GameTimer
 
 	double getInterpolationAlpha()
 	{
-		return (lag < timeGame) ? lag / timeGame : 1.0f;
+		return (lag < dtimeGame) ? lag / dtimeGame : 1.0f;
 	}
 
 	double getFPS()
 	{
-		return (deltaTime != 0.0) ? 1000000.0 / deltaTime : 0.0;
+		return (deltaTime != 0.0) ? 1000000.f / deltaTime : 0;
 	}
 
 	void sleepAfterRender()
 	{
 		//get Time to sleep in microseconds
-		//int timeSleep = std::ceil(timeRender - getDurationMicrosec(timeCurrentFrame, std::chrono::high_resolution_clock::now())) - 2000;
-
+		int timeSleep =( dtimeRender -deltaTime >0)? dtimeRender - deltaTime : 0;
+		sf::sleep(sf::microseconds(timeSleep));
 		//while (timeSleep > 2000) //If we can sleep at least 1 ms
 		//{
 		//	timeBeginPeriod(1);

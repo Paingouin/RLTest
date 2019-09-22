@@ -25,12 +25,12 @@ struct Camera
 	glm::vec4 camRight;
 	glm::vec4 camUp;
 	glm::vec3 camFront;
-	glm::mat4 model;
-	glm::mat4 mRotate;
-	glm::mat4 mView;
-	glm::mat4 mProjection;
-	glm::mat4 mModelView;
-	glm::mat4 mTotal;
+	glm::dmat4 mModel;
+	glm::dmat4 mRotate;
+	glm::dmat4 mView;
+	glm::dmat4 mProjection;
+	glm::dmat4 mModelView;
+	glm::dmat4 mTotal;
 
 	glm::vec3 posOffset;
 
@@ -50,14 +50,14 @@ struct Camera
 		posOffset.y = Zoom * sin(glm::radians(Pitch)) * sin(glm::radians(Yaw));
 		posOffset.z = Zoom * cos(glm::radians(Yaw));
 
-		glm::mat4 mScale =
+		glm::dmat4 mScale =
 		{
 			 1.f , 0.f, 0.f, 0.f,
 			 0.f , 1.f, 0.f, 0.f,
 			 0.f , 0.f, 1.f, 0.f,
 			 0.f , 0.f, 0.f, 1.f
 		};
-		glm::mat4 mTranslate =
+		glm::dmat4 mTranslate =
 		{
 			 1.f , 0.f, 0.f, 0.0f,//X
 			 0.f , 1.f, 0.f, 0.0f,//Y
@@ -77,17 +77,17 @@ struct Camera
 			(2 * tan(0.5 * fov * glm::pi<float>() / 180.0)));*/
 
 		// calculate the model matrix for each object and pass  before drawing
-		 //model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first;
+		 //model = glm::dmat4(1.0f); // make sure to initialize matrix to identity matrix first;
 	 //translation*rotation*scale
 	
 		glm::vec4 camPos = {(float) Position.x +posOffset.x , (float)Position.y + posOffset.y,(float)Position.z + posOffset.z  , 1.f };
 		glm::vec4 tarPos = { (float) target.x  , (float)target.y , (float)target.z  , 1.f };
 		camFront = { 0.0f, 0.0f,1.f};
 
-		mRotate = glm::rotate(glm::radians(-Pitch - 180), camFront);
-		model = mTranslate * mScale;
-		glm::vec3 camPos3 = model * camPos;
-		glm::vec3 tarPos3 = model * tarPos;
+		//mRotate = glm::rotate(glm::radians(-Pitch - 180), camFront);
+		mModel = mTranslate * mScale;
+		glm::vec3 camPos3 = mModel * camPos;
+		glm::vec3 tarPos3 = mModel * tarPos;
 		//std::cout << "before cam:" << camPos3.x << " : " << camPos3.y << " : " << camPos3.z << std::endl;
 		mView = glm::lookAtRH(
 			camPos3, // Camera in World Space  
@@ -102,10 +102,12 @@ struct Camera
 
 		//NO : z is Normalized  [-1 +1]
 		//ZO : z is normalied [0 +1]
-
+		
 		mProjection = glm::perspectiveRH_NO(glm::radians(fov), viewport[2] / viewport[3], near, far) ;
-		mTotal = mProjection * mView  * model;
-		mModelView = mView * model; //now we can use the camera View space (so in2d from the camera)
+		//mProjection = glm::orthoRH_NO(viewport[0], viewport[1], viewport[], 0.f, 0.f, 1000.f);
+
+		mTotal = mProjection * mView  * mModel;
+		mModelView = mView * mModel; //now we can use the camera View space (so in2d from the camera)
 
 		s = glm::sin(glm::radians(Pitch));
 		c = glm::cos(glm::radians(Pitch));
@@ -148,7 +150,7 @@ struct Camera
 
 
 	//Calculate Global position on screen based of camera
-	const Glyph to_global(float x, float y, float z, char glyph, sf::Color& color, sf::Font& font)
+	inline const Glyph __fastcall to_global(float x, float y, float z, char glyph, sf::Color& color)
 	{
 		Glyph result = {};
 
@@ -157,56 +159,69 @@ struct Camera
 		s = glm::sin(glm::radians((180-Pitch )));
 		c = glm::cos(glm::radians((180-Pitch )));
 	
-		glm::vec4 pos = mModelView* orig* 1.7f;
+		struct points
+		{
+			glm::vec4 pos;
+			glm::vec4 LU ;
+			glm::vec4 RU ;
+			glm::vec4 RB ;
+			glm::vec4 LB ;
+		} point;
 
-		glm::vec4 LU = {  - 0.5,     0.5, pos.z ,1.f };
-		glm::vec4 RU = {    0.5,     0.5, pos.z ,1.f };
-		glm::vec4 RB = {    0.5,   - 0.5, pos.z ,1.f };
-		glm::vec4 LB = {  - 0.5,   - 0.5, pos.z ,1.f };
+		point.pos = mModelView * orig * (double)1.7f;
+		point.LU = { -0.5,     0.5, point.pos.z ,1.f };
+		point.RU = { 0.5,     0.5, point.pos.z ,1.f };
+		point.RB = { 0.5,   -0.5, point.pos.z ,1.f };
+		point.LB = { -0.5,   -0.5, point.pos.z ,1.f };
 
-		float tmpX = LU.x;
-		float tmpY = LU.y;
-		LU.x = tmpX * c - tmpY *s;
-		LU.y = tmpX * s + tmpY *c;
-		tmpX = RU.x;
-		tmpY = RU.y;
-		RU.x = tmpX * c - tmpY * s;
-		RU.y = tmpX * s + tmpY * c;
-		tmpX = RB.x;
-		tmpY = RB.y;
-		RB.x = tmpX * c - tmpY * s;
-		RB.y = tmpX * s + tmpY * c;
-		tmpX = LB.x;
-		tmpY = LB.y;
-		LB.x = tmpX * c - tmpY * s;
-		LB.y = tmpX * s + tmpY * c;
+		if (glyph != '@')
+		{
+			float tmpX = point.LU.x;
+			float tmpY = point.LU.y;
+			point.LU.x = tmpX * c - tmpY * s;
+			point.LU.y = tmpX * s + tmpY * c;
+			tmpX = point.RU.x;
+			tmpY = point.RU.y;
+			point.RU.x = tmpX * c - tmpY * s;
+			point.RU.y = tmpX * s + tmpY * c;
+			tmpX = point.RB.x;
+			tmpY = point.RB.y;
+			point.RB.x = tmpX * c - tmpY * s;
+			point.RB.y = tmpX * s + tmpY * c;
+			tmpX = point.LB.x;
+			tmpY = point.LB.y;
+			point.LB.x = tmpX * c - tmpY * s;
+			point.LB.y = tmpX * s + tmpY * c;
 
-		LU += pos;
-		RU += pos;
-		RB += pos;
-		LB += pos;
+		}
 
-		LU = mProjection * LU;
-		RU = mProjection * RU;
-		RB = mProjection * RB;
-		LB = mProjection * LB;
+		point.LU += point.pos;
+		point.RU += point.pos;
+		point.RB += point.pos;
+		point.LB += point.pos;
+
+		point.LU = mProjection * point.LU;
+		point.RU = mProjection * point.RU;
+		point.RB = mProjection * point.RB;
+		point.LB = mProjection * point.LB;
+
+
+		point.LU /= point.LU.w;
+		point.RU /= point.RU.w;
+		point.RB /= point.RB.w;
+		point.LB /= point.LB.w;
 		
-		//if ((LU.z > -1.f && LU.z < 1.f)&&(RU.z > -1.f && RU.z < 1.f)&& (RB.z > -1.f && RB.z < 1.f) && (LB.z > -1.f && LB.z < 1.f)) //culling
-		//{
-			LU /= LU.w;
-			RU /= RU.w;
-			RB /= RB.w;
-			LB /= LB.w;
+		if ((point.LU.z > 0.f && point.LU.z < 1.f)&&(point.RU.z > 0.f && point.RU.z < 1.f)&& (point.RB.z > 0.f && point.RB.z < 1.f) && (point.LB.z > 0.f && point.LB.z < 1.f)) //culling
+		{
 
-
-			LU.x = (LU.x * viewport[2]) + viewport[2]/2;
-			LU.y = (viewport[3]/2 - (LU.y * viewport[3]));
-			RU.x = (RU.x * viewport[2]) + viewport[2] / 2;
-			RU.y = (viewport[3] / 2 - (RU.y * viewport[3])) ;
-			RB.x = (RB.x * viewport[2]) + viewport[2] / 2;
-			RB.y = (viewport[3] / 2 - (RB.y * viewport[3]));
-			LB.x = (LB.x * viewport[2]) + viewport[2] / 2;
-			LB.y = (viewport[3] / 2 - (LB.y * viewport[3]));
+			point.LU.x = (point.LU.x * viewport[2]) + viewport[2]/2;
+			point.LU.y = (viewport[3]/2 - (point.LU.y * viewport[3]));
+			point.RU.x = (point.RU.x * viewport[2]) + viewport[2] / 2;
+			point.RU.y = (viewport[3] / 2 - (point.RU.y * viewport[3])) ;
+			point.RB.x = (point.RB.x * viewport[2]) + viewport[2] / 2;
+			point.RB.y = (viewport[3] / 2 - (point.RB.y * viewport[3]));
+			point.LB.x = (point.LB.x * viewport[2]) + viewport[2] / 2;
+			point.LB.y = (viewport[3] / 2 - (point.LB.y * viewport[3]));
 
 			orig = mTotal * orig;
 
@@ -220,15 +235,15 @@ struct Camera
 			//scale = heightOfNearPlane * 0.015f / distance;
 			//orig = orig * 0.5f + 0.5f;
 
-			sf::Vertex quad1 = {};
-			sf::Vertex quad2 = {};
-			sf::Vertex quad3 = {};
-			sf::Vertex quad4 = {};
+			sf::Vertex quad1  ;
+			sf::Vertex quad2 ;
+			sf::Vertex quad3 ;
+			sf::Vertex quad4 ;
 			// define its 4 corners
-			quad1.position = sf::Vector2f(LU.x, LU.y);
-			quad2.position = sf::Vector2f(RU.x, RU.y);
-			quad3.position = sf::Vector2f(RB.x, RB.y);
-			quad4.position = sf::Vector2f(LB.x, LB.y);
+			quad1.position = sf::Vector2f(point.LU.x, point.LU.y);
+			quad2.position = sf::Vector2f(point.RU.x, point.RU.y);
+			quad3.position = sf::Vector2f(point.RB.x, point.RB.y);
+			quad4.position = sf::Vector2f(point.LB.x, point.LB.y);
 
 
 			//sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
@@ -255,18 +270,18 @@ struct Camera
 			result.vertices[3] = quad4;
 			result.orig = orig;
 			return result;
-		//}
-		//else
-		//{
-		//	result.orig = orig;
-		//	result.orig.z = -1;
-		//	return result;
-		//}
+		}
+		else
+		{
+			result.orig = orig;
+			result.orig.z = -1;
+			return result;
+		}
 
 	}
 
 };
-
+//
 /* NOT USED, but in case of
 	sf::Shader shader;
 
