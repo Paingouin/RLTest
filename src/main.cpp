@@ -40,7 +40,11 @@ struct Controller
 
 void renderGlyphs(std::vector<Cell>::iterator begin, std::vector<Cell>::iterator end, std::vector<Cell>& map, Camera& camera , std::vector<Glyph>& glyphs)
 {
-	for (std::vector<Cell>::iterator& cell = begin; begin != end; ++cell)
+	std::vector<glm::vec4> points = camera.generatePoints(map);
+
+	
+
+	/*for (std::vector<Cell>::iterator& cell = begin; begin != end; ++cell)
 	{
 		Glyph g;
 		if (cell->visible == true)
@@ -63,7 +67,7 @@ void renderGlyphs(std::vector<Cell>::iterator begin, std::vector<Cell>::iterator
 				}
 			}
 		}
-	}
+	}*/
 }
 
 std::vector<Cell> genRectangleRoom()

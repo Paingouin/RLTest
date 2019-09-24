@@ -149,134 +149,137 @@ struct Camera
 	}
 
 
+	std::vector<glm::vec4> __fastcall generatePoints(std::vector<Cell>& cells)
+	{
+		std::vector<glm::vec4> results;
+
+		s = glm::sin(glm::radians((180 - Pitch)));
+		c = glm::cos(glm::radians((180 - Pitch)));
+		
+		for (Cell cell : cells)
+		{
+			glm::vec4 orig = { cell.x, cell.y, cell.z, 1.f };
+
+			glm::vec4 pos = mModelView * orig * (double)1.7f;
+			glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
+			glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
+			glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
+			glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
+
+			if (cell.glyph != '@')
+			{
+				float tmpX = LU.x;
+				float tmpY = LU.y;
+				LU.x = tmpX * c - tmpY * s;
+				LU.y = tmpX * s + tmpY * c;
+				tmpX = RU.x;
+				tmpY = RU.y;
+				RU.x = tmpX * c - tmpY * s;
+				RU.y = tmpX * s + tmpY * c;
+				tmpX = RB.x;
+				tmpY = RB.y;
+				RB.x = tmpX * c - tmpY * s;
+				RB.y = tmpX * s + tmpY * c;
+				tmpX = LB.x;
+				tmpY = LB.y;
+				LB.x = tmpX * c - tmpY * s;
+				LB.y = tmpX * s + tmpY * c;
+
+			}
+
+			LU += pos;
+			RU += pos;
+			RB += pos;
+			LB += pos;
+
+			results.push_back(LU);
+			results.push_back(RU);
+			results.push_back(RB);
+			results.push_back(LB);
+			results.push_back(pos);
+		}
+		
+		for (glm::vec4& point : results)
+		{
+			point = mProjection * point;
+			point /= point.w;
+		}
+
+		return results;
+	}
+
+
 	//Calculate Global position on screen based of camera
 	inline const Glyph __fastcall to_global(float x, float y, float z, char glyph, sf::Color& color)
 	{
-		Glyph result = {};
-
-		glm::vec4 orig = { x, y, z, 1.f };
-
-		s = glm::sin(glm::radians((180-Pitch )));
-		c = glm::cos(glm::radians((180-Pitch )));
-	
-		struct points
-		{
-			glm::vec4 pos;
-			glm::vec4 LU ;
-			glm::vec4 RU ;
-			glm::vec4 RB ;
-			glm::vec4 LB ;
-		} point;
-
-		point.pos = mModelView * orig * (double)1.7f;
-		point.LU = { -0.5,     0.5, point.pos.z ,1.f };
-		point.RU = { 0.5,     0.5, point.pos.z ,1.f };
-		point.RB = { 0.5,   -0.5, point.pos.z ,1.f };
-		point.LB = { -0.5,   -0.5, point.pos.z ,1.f };
-
-		if (glyph != '@')
-		{
-			float tmpX = point.LU.x;
-			float tmpY = point.LU.y;
-			point.LU.x = tmpX * c - tmpY * s;
-			point.LU.y = tmpX * s + tmpY * c;
-			tmpX = point.RU.x;
-			tmpY = point.RU.y;
-			point.RU.x = tmpX * c - tmpY * s;
-			point.RU.y = tmpX * s + tmpY * c;
-			tmpX = point.RB.x;
-			tmpY = point.RB.y;
-			point.RB.x = tmpX * c - tmpY * s;
-			point.RB.y = tmpX * s + tmpY * c;
-			tmpX = point.LB.x;
-			tmpY = point.LB.y;
-			point.LB.x = tmpX * c - tmpY * s;
-			point.LB.y = tmpX * s + tmpY * c;
-
-		}
-
-		point.LU += point.pos;
-		point.RU += point.pos;
-		point.RB += point.pos;
-		point.LB += point.pos;
-
-		point.LU = mProjection * point.LU;
-		point.RU = mProjection * point.RU;
-		point.RB = mProjection * point.RB;
-		point.LB = mProjection * point.LB;
-
-
-		point.LU /= point.LU.w;
-		point.RU /= point.RU.w;
-		point.RB /= point.RB.w;
-		point.LB /= point.LB.w;
 		
-		if ((point.LU.z > 0.f && point.LU.z < 1.f)&&(point.RU.z > 0.f && point.RU.z < 1.f)&& (point.RB.z > 0.f && point.RB.z < 1.f) && (point.LB.z > 0.f && point.LB.z < 1.f)) //culling
-		{
+		
+		//if ((LU.z > 0.f && LU.z < 1.f)&&(RU.z > 0.f && RU.z < 1.f)&& (RB.z > 0.f && RB.z < 1.f) && (LB.z > 0.f && LB.z < 1.f)) //culling
+		//{
 
-			point.LU.x = (point.LU.x * viewport[2]) + viewport[2]/2;
-			point.LU.y = (viewport[3]/2 - (point.LU.y * viewport[3]));
-			point.RU.x = (point.RU.x * viewport[2]) + viewport[2] / 2;
-			point.RU.y = (viewport[3] / 2 - (point.RU.y * viewport[3])) ;
-			point.RB.x = (point.RB.x * viewport[2]) + viewport[2] / 2;
-			point.RB.y = (viewport[3] / 2 - (point.RB.y * viewport[3]));
-			point.LB.x = (point.LB.x * viewport[2]) + viewport[2] / 2;
-			point.LB.y = (viewport[3] / 2 - (point.LB.y * viewport[3]));
+		//	LU.x = (LU.x * viewport[2]) + viewport[2]/2;
+		//	LU.y = (viewport[3]/2 - (LU.y * viewport[3]));
+		//	RU.x = (RU.x * viewport[2]) + viewport[2] / 2;
+		//	RU.y = (viewport[3] / 2 - (RU.y * viewport[3])) ;
+		//	RB.x = (RB.x * viewport[2]) + viewport[2] / 2;
+		//	RB.y = (viewport[3] / 2 - (RB.y * viewport[3]));
+		//	LB.x = (LB.x * viewport[2]) + viewport[2] / 2;
+		//	LB.y = (viewport[3] / 2 - (LB.y * viewport[3]));
 
-			orig = mTotal * orig;
+		//	orig = mTotal * orig;
 
-			orig.z /= orig.w; //use z of origin to put something on top
+		//	orig.z /= orig.w; //use z of origin to put something on top
 
-			//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
-			//orig.x /= orig.w;
-			//orig.y /= orig.w;
-			
-			//orig /= orig.w;
-			//scale = heightOfNearPlane * 0.015f / distance;
-			//orig = orig * 0.5f + 0.5f;
+		//	//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
+		//	//orig.x /= orig.w;
+		//	//orig.y /= orig.w;
+		//	
+		//	//orig /= orig.w;
+		//	//scale = heightOfNearPlane * 0.015f / distance;
+		//	//orig = orig * 0.5f + 0.5f;
 
-			sf::Vertex quad1  ;
-			sf::Vertex quad2 ;
-			sf::Vertex quad3 ;
-			sf::Vertex quad4 ;
-			// define its 4 corners
-			quad1.position = sf::Vector2f(point.LU.x, point.LU.y);
-			quad2.position = sf::Vector2f(point.RU.x, point.RU.y);
-			quad3.position = sf::Vector2f(point.RB.x, point.RB.y);
-			quad4.position = sf::Vector2f(point.LB.x, point.LB.y);
+		//	sf::Vertex quad1  ;
+		//	sf::Vertex quad2 ;
+		//	sf::Vertex quad3 ;
+		//	sf::Vertex quad4 ;
+		//	// define its 4 corners
+		//	quad1.position = sf::Vector2f(LU.x, LU.y);
+		//	quad2.position = sf::Vector2f(RU.x, RU.y);
+		//	quad3.position = sf::Vector2f(RB.x, RB.y);
+		//	quad4.position = sf::Vector2f(LB.x, LB.y);
 
 
-			//sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
+		//	//sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
 
-			// define its 4 texture coordinates
-			//quad1.texCoords = sf::Vector2f(textcoor.left ,textcoor.top );
-			//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
-			//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
-			//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
+		//	// define its 4 texture coordinates
+		//	//quad1.texCoords = sf::Vector2f(textcoor.left ,textcoor.top );
+		//	//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
+		//	//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
+		//	//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
 
-			quad1.texCoords = sf::Vector2f( (glyph- 31)*128 ,  9);
-			quad2.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 9);
-			quad3.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 138);
-			quad4.texCoords = sf::Vector2f((glyph - 31) * 128, 138);
+		//	quad1.texCoords = sf::Vector2f( (glyph- 31)*128 ,  9);
+		//	quad2.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 9);
+		//	quad3.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 138);
+		//	quad4.texCoords = sf::Vector2f((glyph - 31) * 128, 138);
 
-			quad1.color = color;
-			quad2.color = color;
-			quad3.color = color;
-			quad4.color = color;
+		//	quad1.color = color;
+		//	quad2.color = color;
+		//	quad3.color = color;
+		//	quad4.color = color;
 
-			result.vertices[0] = quad1;
-			result.vertices[1] = quad2;
-			result.vertices[2] = quad3;
-			result.vertices[3] = quad4;
-			result.orig = orig;
-			return result;
-		}
-		else
-		{
-			result.orig = orig;
-			result.orig.z = -1;
-			return result;
-		}
+		//	result.vertices[0] = quad1;
+		//	result.vertices[1] = quad2;
+		//	result.vertices[2] = quad3;
+		//	result.vertices[3] = quad4;
+		//	result.orig = orig;
+		//	return result;
+		//}
+		//else
+		//{
+		//	result.orig = orig;
+		//	result.orig.z = -1;
+		//	return result;
+		//}
 
 	}
 
