@@ -149,140 +149,200 @@ struct Camera
 	}
 
 
-	std::vector<glm::vec4> __fastcall generatePoints(std::vector<Cell>& cells)
+	//Calculate Global position on screen based of camera
+	inline const std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
 	{
 		std::vector<glm::vec4> results;
+		results.reserve(cells.size());
 
 		s = glm::sin(glm::radians((180 - Pitch)));
 		c = glm::cos(glm::radians((180 - Pitch)));
-		
+
 		for (Cell cell : cells)
 		{
-			glm::vec4 orig = { cell.x, cell.y, cell.z, 1.f };
-
-			glm::vec4 pos = mModelView * orig * (double)1.7f;
-			glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
-			glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
-			glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
-			glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
-
-			if (cell.glyph != '@')
+			if (cell.visible == true)
 			{
-				float tmpX = LU.x;
-				float tmpY = LU.y;
-				LU.x = tmpX * c - tmpY * s;
-				LU.y = tmpX * s + tmpY * c;
-				tmpX = RU.x;
-				tmpY = RU.y;
-				RU.x = tmpX * c - tmpY * s;
-				RU.y = tmpX * s + tmpY * c;
-				tmpX = RB.x;
-				tmpY = RB.y;
-				RB.x = tmpX * c - tmpY * s;
-				RB.y = tmpX * s + tmpY * c;
-				tmpX = LB.x;
-				tmpY = LB.y;
-				LB.x = tmpX * c - tmpY * s;
-				LB.y = tmpX * s + tmpY * c;
 
-			}
+				if (cell.ent != nullptr)
+				{
+					glm::vec4 orig = { cell.ent->x, cell.ent->y, cell.ent->z, 1.f };
 
-			LU += pos;
-			RU += pos;
-			RB += pos;
-			LB += pos;
+					glm::vec4 pos = mModelView * orig * (double)1.7f;
+					glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
+					glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
+					glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
+					glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
 
-			results.push_back(LU);
-			results.push_back(RU);
-			results.push_back(RB);
-			results.push_back(LB);
-			results.push_back(pos);
+					if (cell.ent->glyph != '@')
+					{
+						float tmpX = LU.x;
+						float tmpY = LU.y;
+						LU.x = tmpX * c - tmpY * s;
+						LU.y = tmpX * s + tmpY * c;
+						tmpX = RU.x;
+						tmpY = RU.y;
+						RU.x = tmpX * c - tmpY * s;
+						RU.y = tmpX * s + tmpY * c;
+						tmpX = RB.x;
+						tmpY = RB.y;
+						RB.x = tmpX * c - tmpY * s;
+						RB.y = tmpX * s + tmpY * c;
+						tmpX = LB.x;
+						tmpY = LB.y;
+						LB.x = tmpX * c - tmpY * s;
+						LB.y = tmpX * s + tmpY * c;
+
+					}
+
+					LU += pos;
+					RU += pos;
+					RB += pos;
+					LB += pos;
+
+
+					results.push_back(pos);
+					results.push_back(LU);
+					results.push_back(RU);
+					results.push_back(RB);
+					results.push_back(LB);
+				}
+				else
+				{
+					glm::vec4 orig = { cell.x, cell.y, cell.z, 1.f };
+
+					glm::vec4 pos = mModelView * orig * (double)1.7f;
+					glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
+					glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
+					glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
+					glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
+
+					LU += pos;
+					RU += pos;
+					RB += pos;
+					LB += pos;
+
+
+					results.push_back(pos);
+					results.push_back(LU);
+					results.push_back(RU);
+					results.push_back(RB);
+					results.push_back(LB);
+					if (cell.glyph == '#')
+					{
+						/*for (int i = 0; i < 2; ++i)
+						{
+							glm::vec4 orig = { cell.x, cell.y, cell.z + 0.5f*i, 1.f };
+
+							glm::vec4 posd = mModelView * orig * (double)1.7f;
+							glm::vec4 LUd = { -0.5,     0.5, posd.z ,1.f };
+							glm::vec4 RUd = { 0.5,     0.5, posd.z ,1.f };
+							glm::vec4 RBd = { 0.5,   -0.5, posd.z ,1.f };
+							glm::vec4 LBd = { -0.5,   -0.5, posd.z ,1.f };
+
+							LUd += posd;
+							RUd += posd;
+							RBd += posd;
+							LBd += posd;
+
+
+							results.push_back(posd);
+							results.push_back(LUd);
+							results.push_back(RUd);
+							results.push_back(RBd);
+							results.push_back(LBd);
+						}*/
+					}
+				}
+			}	
 		}
-		
+
 		for (glm::vec4& point : results)
 		{
 			point = mProjection * point;
 			point /= point.w;
 		}
 
-		return results;
+		std::vector<Glyph> glyphs;
+
+		for (int i = 0 ; i < results.size() ; i+=5 )
+		{
+			Glyph glyph = {};
+
+			glm::vec4 orig = results[i];
+			glm::vec4 LU = results[i+1];
+			glm::vec4 RU = results[i+2];
+			glm::vec4 RB = results[i+3];
+			glm::vec4 LB = results[i+4];
+
+			if ((LU.z > 0.f && LU.z < 1.f)&&(RU.z > 0.f && RU.z < 1.f)&& (RB.z > 0.f && RB.z < 1.f) && (LB.z > 0.f && LB.z < 1.f)) //culling
+			{
+
+				LU.x = (LU.x * viewport[2]) + viewport[2]/2;
+				LU.y = (viewport[3]/2 - (LU.y * viewport[3]));
+				RU.x = (RU.x * viewport[2]) + viewport[2] / 2;
+				RU.y = (viewport[3] / 2 - (RU.y * viewport[3])) ;
+				RB.x = (RB.x * viewport[2]) + viewport[2] / 2;
+				RB.y = (viewport[3] / 2 - (RB.y * viewport[3]));
+				LB.x = (LB.x * viewport[2]) + viewport[2] / 2;
+				LB.y = (viewport[3] / 2 - (LB.y * viewport[3]));
+
+				//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
+				//orig.x /= orig.w;
+				//orig.y /= orig.w;
+			
+				//orig /= orig.w;
+				//scale = heightOfNearPlane * 0.015f / distance;
+				//orig = orig * 0.5f + 0.5f;
+
+				sf::Vertex quad1  ;
+				sf::Vertex quad2 ;
+				sf::Vertex quad3 ;
+				sf::Vertex quad4 ;
+				// define its 4 corners
+				quad1.position = sf::Vector2f(LU.x, LU.y);
+				quad2.position = sf::Vector2f(RU.x, RU.y);
+				quad3.position = sf::Vector2f(RB.x, RB.y);
+				quad4.position = sf::Vector2f(LB.x, LB.y);
+
+
+				//sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
+
+				// define its 4 texture coordinates
+				//quad1.texCoords = sf::Vector2f(textcoor.left ,textcoor.top );
+				//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
+				//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
+				//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
+				char lettre = (cells[i / 5].ent == nullptr) ? cells[i / 5].glyph : cells[i / 5].ent->glyph;
+				quad1.texCoords = sf::Vector2f( (lettre - 31)*128 ,  9);
+				quad2.texCoords = sf::Vector2f(127  + (lettre - 31) * 128, 9);
+				quad3.texCoords = sf::Vector2f(127  + (lettre - 31) * 128, 138);
+				quad4.texCoords = sf::Vector2f((lettre - 31) * 128, 138);
+
+				sf::Color color = (cells[i / 5].ent == nullptr) ? cells[i / 5].baseColor : cells[i / 5].ent->baseColor;
+				quad1.color = color;
+				quad2.color = color;
+				quad3.color = color;
+				quad4.color = color;
+
+				glyph.vertices[0] = quad1;
+				glyph.vertices[1] = quad2;
+				glyph.vertices[2] = quad3;
+				glyph.vertices[3] = quad4;
+				glyph.orig = orig;
+
+				
+			}
+			else
+			{
+				glyph.orig = orig;
+				glyph.orig.z = -1;
+			}
+
+			glyphs.push_back(glyph);
+		}
+
+		return glyphs;
 	}
-
-
-	//Calculate Global position on screen based of camera
-	inline const Glyph __fastcall to_global(float x, float y, float z, char glyph, sf::Color& color)
-	{
-		
-		
-		//if ((LU.z > 0.f && LU.z < 1.f)&&(RU.z > 0.f && RU.z < 1.f)&& (RB.z > 0.f && RB.z < 1.f) && (LB.z > 0.f && LB.z < 1.f)) //culling
-		//{
-
-		//	LU.x = (LU.x * viewport[2]) + viewport[2]/2;
-		//	LU.y = (viewport[3]/2 - (LU.y * viewport[3]));
-		//	RU.x = (RU.x * viewport[2]) + viewport[2] / 2;
-		//	RU.y = (viewport[3] / 2 - (RU.y * viewport[3])) ;
-		//	RB.x = (RB.x * viewport[2]) + viewport[2] / 2;
-		//	RB.y = (viewport[3] / 2 - (RB.y * viewport[3]));
-		//	LB.x = (LB.x * viewport[2]) + viewport[2] / 2;
-		//	LB.y = (viewport[3] / 2 - (LB.y * viewport[3]));
-
-		//	orig = mTotal * orig;
-
-		//	orig.z /= orig.w; //use z of origin to put something on top
-
-		//	//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
-		//	//orig.x /= orig.w;
-		//	//orig.y /= orig.w;
-		//	
-		//	//orig /= orig.w;
-		//	//scale = heightOfNearPlane * 0.015f / distance;
-		//	//orig = orig * 0.5f + 0.5f;
-
-		//	sf::Vertex quad1  ;
-		//	sf::Vertex quad2 ;
-		//	sf::Vertex quad3 ;
-		//	sf::Vertex quad4 ;
-		//	// define its 4 corners
-		//	quad1.position = sf::Vector2f(LU.x, LU.y);
-		//	quad2.position = sf::Vector2f(RU.x, RU.y);
-		//	quad3.position = sf::Vector2f(RB.x, RB.y);
-		//	quad4.position = sf::Vector2f(LB.x, LB.y);
-
-
-		//	//sf::Rect<int> textcoor = font.getGlyph(glyph, 128, false).textureRect;
-
-		//	// define its 4 texture coordinates
-		//	//quad1.texCoords = sf::Vector2f(textcoor.left ,textcoor.top );
-		//	//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
-		//	//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
-		//	//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
-
-		//	quad1.texCoords = sf::Vector2f( (glyph- 31)*128 ,  9);
-		//	quad2.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 9);
-		//	quad3.texCoords = sf::Vector2f(127  + (glyph - 31) * 128, 138);
-		//	quad4.texCoords = sf::Vector2f((glyph - 31) * 128, 138);
-
-		//	quad1.color = color;
-		//	quad2.color = color;
-		//	quad3.color = color;
-		//	quad4.color = color;
-
-		//	result.vertices[0] = quad1;
-		//	result.vertices[1] = quad2;
-		//	result.vertices[2] = quad3;
-		//	result.vertices[3] = quad4;
-		//	result.orig = orig;
-		//	return result;
-		//}
-		//else
-		//{
-		//	result.orig = orig;
-		//	result.orig.z = -1;
-		//	return result;
-		//}
-
-	}
-
 };
 //
 /* NOT USED, but in case of
