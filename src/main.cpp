@@ -42,9 +42,9 @@ struct Controller
 std::vector<Cell> genRectangleRoom()
 {
 	std::vector<Cell> list;
-	for (int y = 0; y <30; ++y)
+	for (int y = 0; y <50; ++y)
 	{
-		for (int x = 0; x < 30; ++x)
+		for (int x = 0; x < 50; ++x)
 		{
 			Cell cell;
 			if ((x == 0 || x == 17) || (y == 0 || y == 17))
@@ -60,16 +60,16 @@ std::vector<Cell> genRectangleRoom()
 			}
 			cell.x = x;
 			cell.y = y;
-			cell.baseColor = sf::Color(200 - x + y * 30, 100 - x + y * 30, 200, 255);
+			cell.baseColor = sf::Color(200 - x + y * 50, 100 - x + y * 50, 200, 255);
 			list.push_back(cell);
 		}
 	}
 
-	list[6 + 6 * 30].glyph = '#';
-	list[6 + 6 * 30].block = true;
+	list[6 + 6 * 50].glyph = '#';
+	list[6 + 6 * 50].block = true;
 
-	list[8 + 12 * 30].glyph = '#';
-	list[8 + 12 * 30].block = true;
+	list[8 + 12 * 50].glyph = '#';
+	list[8 + 12 * 50].block = true;
 	return list;
 }
 
@@ -90,7 +90,7 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, double s
 			double leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
 			double rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
 
-			if (!(currentX >= 0 && currentY >= 0 && currentX < 30 && currentY < 30) || start < rightSlope) {
+			if (!(currentX >= 0 && currentY >= 0 && currentX < 50 && currentY < 50) || start < rightSlope) {
 				continue;
 			}
 			else if (end > leftSlope) {
@@ -101,12 +101,12 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, double s
 			if ((deltaX * deltaX) + (deltaY * deltaY) <
 			((radius - 3) * (radius - 3))) {
 				//double bright = (double)(1 - (rStrat.radius(deltaX, deltaY) / radius));
-				map[currentX + currentY * 30].visible = true;
+				map[currentX + currentY * 50].visible = true;
 			}
 		
 
 			if (blocked) { //previous cell was a blocking one
-				if (map[currentX + currentY * 30].block >= 1) {//hit a wall
+				if (map[currentX + currentY * 50].block >= 1) {//hit a wall
 					newStart = rightSlope;
 					continue;
 				}
@@ -116,7 +116,7 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, double s
 				}
 			}
 			else {
-				if (map[currentX + currentY * 30].block >= 1 && distance < radius) {//hit a wall within sight line
+				if (map[currentX + currentY * 50].block >= 1 && distance < radius) {//hit a wall within sight line
 					blocked = true;
 					castLight(map, distance + 1, startX, startY, start, leftSlope, xx, xy, yx, yy, radius);
 					newStart = rightSlope;
@@ -134,7 +134,7 @@ void calculateFOV(std::vector<Cell>& map,  int startX, int startY, double radius
 		cell.visible = true;
 	}
 
-	map[startX + startY * 30].visible = true;
+	map[startX + startY * 50].visible = true;
 	
 	//For each diagonals
 	castLight(map, 1, startX , startY, 1.0f, 0.0f, 0, -1, 1, 0, radius);
@@ -233,7 +233,7 @@ int main()
 		,sf::Color(255, 255, 255, 255)
 	};
 
-	map[3 + 3 * 30].ent = &player;
+	map[3 + 3 * 50].ent = &player;
 
 	player.x = 3;
 	player.y = 3;
@@ -271,28 +271,28 @@ int main()
 				window.close();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map[player.x + player.y * 50].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map[player.x + player.y * 50].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map[player.x + player.y * 50].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch+180)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch+180)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map[player.x + player.y * 50].ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch )));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch )));
 				moved = true;
@@ -336,7 +336,7 @@ int main()
 			}
 		}
 
-		player.z = map[player.x + player.y * 30].z;
+		player.z = map[player.x + player.y * 50].z;
 		
 		if (firstCam)
 		{
@@ -352,7 +352,7 @@ int main()
 			target = { player.x , player.y , player.z };	
 		}
 
-		map[player.x + player.y * 30].ent = &player;
+		map[player.x + player.y * 50].ent = &player;
 
 
 		//wheighted avarege : v = ((v * (N - 1)) + w) / N; fast at start but decrease 
@@ -376,14 +376,8 @@ int main()
 
 		//Gen mapSprite(todo : based on fov) + (todo: light)
 
-		//std::thread t1(renderGlyphs, map.begin(), map.end()- (map.size()/2), map, camera, std::ref(glyphs));
-		//std::thread t2(renderGlyphs, map.end() - (map.size() / 2), map.end(), map, camera, std::ref(glyphPart2));
 		glyphs = camera.to_global(map);
 
-
-		//t1.join();
-		//t2.join();
-		
 		//glyphs.insert(glyphs.end(), glyphPart2.begin(), glyphPart2.end());
 		
 		//Z-sorting
@@ -413,9 +407,9 @@ int main()
 		windowTexture.draw(lines);
 
 
-		sf::Sprite sprite(asciiTexture.getTexture());//c++ runtime checks
+		//sf::Sprite sprite(asciiTexture.getTexture());//c++ runtime checks
 
-		windowTexture.draw(sprite);
+		//windowTexture.draw(sprite);
 		windowTexture.display();
 		
 		//draw to windows
