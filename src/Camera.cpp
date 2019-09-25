@@ -148,139 +148,116 @@ struct Camera
 			Zoom = 90.0f;
 	}
 
+	Sprite  __fastcall spriteFromCell(Cell& cell, double heightMod = 0.f)
+	{
+		Sprite sprite = {};
+		sprite.cell = &cell;
+
+		glm::vec4 orig;
+		if (cell.ent == nullptr)
+		{
+			orig = { cell.x, cell.y, cell.z + heightMod, 1.f };
+		}
+		else
+		{
+			orig = { cell.ent->x, cell.ent->y, cell.ent->z + heightMod, 1.f };
+		}
+			
+		
+		glm::vec4 pos = mModelView * orig * (double)1.7f;
+		glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
+		glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
+		glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
+		glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
+
+		if (cell.ent  == nullptr)
+		{
+			float tmpX = LU.x;
+			float tmpY = LU.y;
+			LU.x = tmpX * c - tmpY * s;
+			LU.y = tmpX * s + tmpY * c;
+			tmpX = RU.x;
+			tmpY = RU.y;
+			RU.x = tmpX * c - tmpY * s;
+			RU.y = tmpX * s + tmpY * c;
+			tmpX = RB.x;
+			tmpY = RB.y;
+			RB.x = tmpX * c - tmpY * s;
+			RB.y = tmpX * s + tmpY * c;
+			tmpX = LB.x;
+			tmpY = LB.y;
+			LB.x = tmpX * c - tmpY * s;
+			LB.y = tmpX * s + tmpY * c;
+
+		}
+
+		LU += pos;
+		RU += pos;
+		RB += pos;
+		LB += pos;
+
+
+		sprite.coordinates[0] = pos;
+		sprite.coordinates[1] = LU;
+		sprite.coordinates[2] = RU;
+		sprite.coordinates[3] = RB;
+		sprite.coordinates[4] = LB;
+
+		return sprite;
+	}
+	 
 
 	//Calculate Global position on screen based of camera
 	inline const std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
 	{
-		std::vector<glm::vec4> results;
-		results.reserve(cells.size());
+		std::vector<Sprite> sprites;
+		sprites.reserve(cells.size());
 
 		s = glm::sin(glm::radians((180 - Pitch)));
 		c = glm::cos(glm::radians((180 - Pitch)));
 
-		for (Cell cell : cells)
+		for (Cell& cell : cells)
 		{
 			if (cell.visible == true)
 			{
-
-				if (cell.ent != nullptr)
+				sprites.push_back(spriteFromCell(cell));
+				if (cell.glyph == '#')
 				{
-					glm::vec4 orig = { cell.ent->x, cell.ent->y, cell.ent->z, 1.f };
-
-					glm::vec4 pos = mModelView * orig * (double)1.7f;
-					glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
-					glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
-					glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
-					glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
-
-					if (cell.ent->glyph != '@')
-					{
-						float tmpX = LU.x;
-						float tmpY = LU.y;
-						LU.x = tmpX * c - tmpY * s;
-						LU.y = tmpX * s + tmpY * c;
-						tmpX = RU.x;
-						tmpY = RU.y;
-						RU.x = tmpX * c - tmpY * s;
-						RU.y = tmpX * s + tmpY * c;
-						tmpX = RB.x;
-						tmpY = RB.y;
-						RB.x = tmpX * c - tmpY * s;
-						RB.y = tmpX * s + tmpY * c;
-						tmpX = LB.x;
-						tmpY = LB.y;
-						LB.x = tmpX * c - tmpY * s;
-						LB.y = tmpX * s + tmpY * c;
-
-					}
-
-					LU += pos;
-					RU += pos;
-					RB += pos;
-					LB += pos;
-
-
-					results.push_back(pos);
-					results.push_back(LU);
-					results.push_back(RU);
-					results.push_back(RB);
-					results.push_back(LB);
+					sprites.push_back(spriteFromCell(cell,0.4f));
+					sprites.push_back(spriteFromCell(cell, 0.8f));
 				}
-				else
-				{
-					glm::vec4 orig = { cell.x, cell.y, cell.z, 1.f };
-
-					glm::vec4 pos = mModelView * orig * (double)1.7f;
-					glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
-					glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
-					glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
-					glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
-
-					LU += pos;
-					RU += pos;
-					RB += pos;
-					LB += pos;
-
-
-					results.push_back(pos);
-					results.push_back(LU);
-					results.push_back(RU);
-					results.push_back(RB);
-					results.push_back(LB);
-					if (cell.glyph == '#')
-					{
-						/*for (int i = 0; i < 2; ++i)
-						{
-							glm::vec4 orig = { cell.x, cell.y, cell.z + 0.5f*i, 1.f };
-
-							glm::vec4 posd = mModelView * orig * (double)1.7f;
-							glm::vec4 LUd = { -0.5,     0.5, posd.z ,1.f };
-							glm::vec4 RUd = { 0.5,     0.5, posd.z ,1.f };
-							glm::vec4 RBd = { 0.5,   -0.5, posd.z ,1.f };
-							glm::vec4 LBd = { -0.5,   -0.5, posd.z ,1.f };
-
-							LUd += posd;
-							RUd += posd;
-							RBd += posd;
-							LBd += posd;
-
-
-							results.push_back(posd);
-							results.push_back(LUd);
-							results.push_back(RUd);
-							results.push_back(RBd);
-							results.push_back(LBd);
-						}*/
-					}
-				}
-			}	
+			}
 		}
 
-		for (glm::vec4& point : results)
+		for (Sprite& sprite : sprites)
 		{
-			point = mProjection * point;
-			point /= point.w;
+			for (glm::vec4& point : sprite.coordinates)
+			{
+				point = mProjection * point;
+				point /= point.w;
+			}
 		}
 
 		std::vector<Glyph> glyphs;
-
-		for (int i = 0 ; i < results.size() ; i+=5 )
+		glyphs.reserve(sprites.size());
+		for (Sprite& sprite : sprites)
 		{
+
 			Glyph glyph = {};
 
-			glm::vec4 orig = results[i];
-			glm::vec4 LU = results[i+1];
-			glm::vec4 RU = results[i+2];
-			glm::vec4 RB = results[i+3];
-			glm::vec4 LB = results[i+4];
+			glm::vec4 orig = sprite.coordinates[0];
+			glm::vec4 LU = sprite.coordinates[1];
+			glm::vec4 RU = sprite.coordinates[2];
+			glm::vec4 RB = sprite.coordinates[3];
+			glm::vec4 LB = sprite.coordinates[4];
 
-			if ((LU.z > 0.f && LU.z < 1.f)&&(RU.z > 0.f && RU.z < 1.f)&& (RB.z > 0.f && RB.z < 1.f) && (LB.z > 0.f && LB.z < 1.f)) //culling
+			if ((LU.z > 0.f && LU.z < 1.f) && (RU.z > 0.f && RU.z < 1.f) && (RB.z > 0.f && RB.z < 1.f) && (LB.z > 0.f && LB.z < 1.f)) //culling
 			{
 
-				LU.x = (LU.x * viewport[2]) + viewport[2]/2;
-				LU.y = (viewport[3]/2 - (LU.y * viewport[3]));
+				LU.x = (LU.x * viewport[2]) + viewport[2] / 2;
+				LU.y = (viewport[3] / 2 - (LU.y * viewport[3]));
 				RU.x = (RU.x * viewport[2]) + viewport[2] / 2;
-				RU.y = (viewport[3] / 2 - (RU.y * viewport[3])) ;
+				RU.y = (viewport[3] / 2 - (RU.y * viewport[3]));
 				RB.x = (RB.x * viewport[2]) + viewport[2] / 2;
 				RB.y = (viewport[3] / 2 - (RB.y * viewport[3]));
 				LB.x = (LB.x * viewport[2]) + viewport[2] / 2;
@@ -289,15 +266,15 @@ struct Camera
 				//float distance = mFinal.w; // /!\ the distance is given by the w value, not the Z
 				//orig.x /= orig.w;
 				//orig.y /= orig.w;
-			
+
 				//orig /= orig.w;
 				//scale = heightOfNearPlane * 0.015f / distance;
 				//orig = orig * 0.5f + 0.5f;
 
-				sf::Vertex quad1  ;
-				sf::Vertex quad2 ;
-				sf::Vertex quad3 ;
-				sf::Vertex quad4 ;
+				sf::Vertex quad1;
+				sf::Vertex quad2;
+				sf::Vertex quad3;
+				sf::Vertex quad4;
 				// define its 4 corners
 				quad1.position = sf::Vector2f(LU.x, LU.y);
 				quad2.position = sf::Vector2f(RU.x, RU.y);
@@ -312,13 +289,13 @@ struct Camera
 				//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
 				//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
 				//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
-				char lettre = (cells[i / 5].ent == nullptr) ? cells[i / 5].glyph : cells[i / 5].ent->glyph;
-				quad1.texCoords = sf::Vector2f( (lettre - 31)*128 ,  9);
-				quad2.texCoords = sf::Vector2f(127  + (lettre - 31) * 128, 9);
-				quad3.texCoords = sf::Vector2f(127  + (lettre - 31) * 128, 138);
+				char lettre = (sprite.cell->ent != nullptr) ?   sprite.cell->ent->glyph : sprite.cell->glyph;
+				quad1.texCoords = sf::Vector2f((lettre - 31) * 128, 9);
+				quad2.texCoords = sf::Vector2f(127 + (lettre - 31) * 128, 9);
+				quad3.texCoords = sf::Vector2f(127 + (lettre - 31) * 128, 138);
 				quad4.texCoords = sf::Vector2f((lettre - 31) * 128, 138);
 
-				sf::Color color = (cells[i / 5].ent == nullptr) ? cells[i / 5].baseColor : cells[i / 5].ent->baseColor;
+				sf::Color color = (sprite.cell->ent != nullptr) ?  sprite.cell->ent->baseColor : sprite.cell->baseColor ;
 				quad1.color = color;
 				quad2.color = color;
 				quad3.color = color;
@@ -329,8 +306,6 @@ struct Camera
 				glyph.vertices[2] = quad3;
 				glyph.vertices[3] = quad4;
 				glyph.orig = orig;
-
-				
 			}
 			else
 			{
@@ -339,8 +314,8 @@ struct Camera
 			}
 
 			glyphs.push_back(glyph);
+		
 		}
-
 		return glyphs;
 	}
 };
@@ -384,7 +359,7 @@ struct Camera
 
 	//#version 150
 
-	//	layout(points) in;
+	//	layout(sprites) in;
 	//layout(triangle_strip) out;
 	//layout(max_vertices = 4) out;
 
@@ -438,7 +413,7 @@ struct Camera
 	//}
 	const std::string geometryShader = \
 		"#version 330 core \n"\
-		"layout (points) in; "\
+		"layout (sprites) in; "\
 		"layout (triangle_strip,max_vertices = 4) out; "\
 		"void main() " \
 		"{ " \

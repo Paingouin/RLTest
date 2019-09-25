@@ -111,6 +111,10 @@ struct Cell
 };
 
 //Render
+struct Sprite {
+	glm::vec4 coordinates[5]; //pos, LU ,RU, RB, LB
+	Cell* cell;
+};
 
 struct Glyph
 {
