@@ -42,6 +42,17 @@ struct GameTimer
 	//std::chrono::time_point<std::chrono::steady_clock> timeBeginGame;
 
 	//std::chrono::time_point<std::chrono::steady_clock> timeLastGameUpdate;
+
+	uint32 deltaTime;
+	int timestepMode;
+
+	int numberOfFrames = 1;
+
+	double dtimeGame = 1000000.0 / 60.f; //GAME_LIMIT
+	double dtimeRender = 1000000.0 / 60.0f; //FPS_LIMIT
+	double lag = 0;
+
+
 	sf::Time timeCurrentFrame;
 	sf::Time timeLastFrame;
 	sf::Time timeBeginGame;
@@ -49,14 +60,7 @@ struct GameTimer
 	sf::Time timeLastGameUpdate;
 
 	sf::Clock time;
-
-
-	double dtimeGame = 1000000.0 / 60.f; //GAME_LIMIT
-	double dtimeRender = 1000000.0 / 60.0f; //FPS_LIMIT
-	double lag = 0;
-	uint32 deltaTime;
-	int timestepMode;
-
+	sf::Clock FPStimer;
 
 	/*int32 getDurationMicrosec(std::chrono::steady_clock::time_point From, std::chrono::steady_clock::time_point To)
 	{
@@ -84,6 +88,8 @@ struct GameTimer
 
 	 void startRenderFrame() //Put at the start of the while render loop
 	{
+	//	 if (numberOfFrames >= 60) FPStimer.restart();
+
 		timeCurrentFrame = time.getElapsedTime();
 		deltaTime = timeCurrentFrame.asMicroseconds() - timeLastFrame.asMicroseconds();
 		
@@ -96,6 +102,12 @@ struct GameTimer
 	inline void endRenderFrame()
 	{
 		timeLastFrame = timeCurrentFrame;
+		//if (numberOfFrames < 60)
+			numberOfFrames += 1;
+		//else
+		//{
+		//	numberOfFrames = 1;
+		//}
 	}
 
 	int doUpdate()
@@ -114,15 +126,21 @@ struct GameTimer
 		//double t = getDurationMicrosec(timeLastGameUpdate, std::chrono::high_resolution_clock::now()) /1000000.0F;
 		//timeLastGameUpdate = std::chrono::high_resolution_clock::now();
 		//return t;
-	}
 
+	}
 
 	double getInterpolationAlpha()
 	{
 		return (lag < dtimeGame) ? lag / dtimeGame : 1.0f;
 	}
+	
 
 	double getFPS()
+	{
+		return numberOfFrames / FPStimer.getElapsedTime().asSeconds();
+	}
+
+	double getLastFrameTime()
 	{
 		return (deltaTime != 0.0) ? 1000000.f / deltaTime : 0;
 	}

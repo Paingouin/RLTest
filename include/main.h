@@ -110,6 +110,50 @@ struct Cell
 
 };
 
+struct Map
+{
+	int width, height;
+	std::vector<Cell> cells;
+
+	inline Cell& at(int x, int y)
+	{
+		if (x < 0) x = 0;
+		else if (x >= width) x = width-1;
+		if (y < 0) y = 0;
+		else if (y >= height) y = height - 1;
+		return cells[x + y * width];
+	}
+	
+	void genRectangleRoom(int sizeX, int sizeY)
+	{
+		width = sizeX;
+		height = sizeY;
+
+		for (int y = 0; y < width; ++y)
+		{
+			for (int x = 0; x < height; ++x)
+			{
+				Cell cell;
+				if ((x == 0 || x == width-1) || (y == 0 || y == height-1))
+				{
+					cell.glyph = '#';
+					cell.z = 0;
+					cell.block = true;
+				}
+				else
+				{
+					cell.glyph = '+';// y+48;
+					cell.z = 0;//(x >= 3)? (x -3.f)*0.1 : 0.f;
+				}
+				cell.x = x;
+				cell.y = y;
+				cell.baseColor = sf::Color(500 - x + y, 50 - x + y , 200, 255);
+				cells.push_back(cell);
+			}
+		}
+	}
+};
+
 //Render
 struct Sprite {
 	glm::vec4 coordinates[5]; //pos, LU ,RU, RB, LB

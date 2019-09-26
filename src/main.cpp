@@ -39,43 +39,7 @@ struct Controller
 };
 
 
-std::vector<Cell> genRectangleRoom()
-{
-	std::vector<Cell> list;
-	for (int y = 0; y <30; ++y)
-	{
-		for (int x = 0; x < 30; ++x)
-		{
-			Cell cell;
-			if ((x == 0 || x == 17) || (y == 0 || y == 17))
-			{
-				cell.glyph = '#';
-				cell.z = 0;
-				cell.block = true;
-			}
-			else
-			{
-				cell.glyph = '+';// y+48;
-				cell.z = 0;//(x >= 3)? (x -3.f)*0.1 : 0.f;
-			}
-			cell.x = x;
-			cell.y = y;
-			cell.baseColor = sf::Color(200 - x + y * 30, 100 - x + y * 30, 200, 255);
-			list.push_back(cell);
-		}
-	}
-
-	list[6 + 6 * 30].glyph = '#';
-	list[6 + 6 * 30].block = true;
-
-	list[8 + 12 * 30].glyph = '#';
-	list[8 + 12 * 30].block = true;
-	return list;
-}
-
-
-
-void castLight(std::vector<Cell>& map, int row, int startX, int startY, double start, double end, int xx, int xy, int yx, int yy, double radius)
+void castLight(Map& map, int row, int startX, int startY, double start, double end, int xx, int xy, int yx, int yy, double radius)
 {
 	double newStart = 0.0f;
 	if (start < end) {
@@ -90,7 +54,7 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, double s
 			double leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
 			double rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
 
-			if (!(currentX >= 0 && currentY >= 0 && currentX < 30 && currentY < 30) || start < rightSlope) {
+			if (!(currentX >= 0 && currentY >= 0 && currentX < 25 && currentY < 25) || start < rightSlope) {
 				continue;
 			}
 			else if (end > leftSlope) {
@@ -101,12 +65,12 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, double s
 			if ((deltaX * deltaX) + (deltaY * deltaY) <
 			((radius - 3) * (radius - 3))) {
 				//double bright = (double)(1 - (rStrat.radius(deltaX, deltaY) / radius));
-				map[currentX + currentY * 30].visible = true;
+				map.at(currentX, currentY).visible = true;
 			}
 		
 
 			if (blocked) { //previous cell was a blocking one
-				if (map[currentX + currentY * 30].block >= 1) {//hit a wall
+				if (map.at(currentX, currentY).block >= 1) {//hit a wall
 					newStart = rightSlope;
 					continue;
 				}
@@ -116,7 +80,7 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, double s
 				}
 			}
 			else {
-				if (map[currentX + currentY * 30].block >= 1 && distance < radius) {//hit a wall within sight line
+				if (map.at(currentX, currentY).block >= 1 && distance < radius) {//hit a wall within sight line
 					blocked = true;
 					castLight(map, distance + 1, startX, startY, start, leftSlope, xx, xy, yx, yy, radius);
 					newStart = rightSlope;
@@ -127,14 +91,14 @@ void castLight(std::vector<Cell>& map, int row, int startX, int startY, double s
 }
 
 //radius: max distance FOV;
-void calculateFOV(std::vector<Cell>& map,  int startX, int startY, double radius)
+void calculateFOV(Map& map,  int startX, int startY, double radius)
 {
-	for (Cell& cell : map)
+	for (Cell& cell : map.cells)
 	{
 		cell.visible = true;
 	}
 
-	map[startX + startY * 30].visible = true;
+	map.at(startX,startY).visible = true;
 	
 	//For each diagonals
 	castLight(map, 1, startX , startY, 1.0f, 0.0f, 0, -1, 1, 0, radius);
@@ -169,8 +133,8 @@ int main()
 	double lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
 	bool firstMouse = true;
 
-	//window.setVerticalSyncEnabled(true);
-	window.setFramerateLimit(60);
+	window.setVerticalSyncEnabled(true);
+	//window.setFramerateLimit(60);
 
 
 	sf::Font font;
@@ -189,7 +153,7 @@ int main()
 
 	//Load Texture ASCII
 	sf::Text fontTxt(fontText, font, 128);
-	double width = fontTxt.findCharacterPos(35).x - fontTxt.findCharacterPos(34).x;
+	double width = fontTxt.findCharacterPos(25).x - fontTxt.findCharacterPos(34).x;
 	//std::cout << std::string(fontText) <<  "\n" << width <<  "\n" << fontTxt.getCharacterSize() << std::endl;
 	fontTxt.setOutlineThickness(3);
 	fontTxt.setPosition(0, 0);
@@ -220,8 +184,14 @@ int main()
 		return -1;
 	}
 
+	//UI (and controls? )
+	UI ui = {};
+
 	//MAP
-	std::vector<Cell> map = genRectangleRoom();
+	Map map;
+	map.genRectangleRoom(25, 25);
+
+	//Control
 	Controller control = {};
 	
 	Entity player =
@@ -233,7 +203,7 @@ int main()
 		,sf::Color(255, 255, 255, 255)
 	};
 
-	map[3 + 3 * 30].ent = &player;
+	map.at(3,3).ent = &player;
 
 	player.x = 3;
 	player.y = 3;
@@ -253,15 +223,14 @@ int main()
 	bool firstCam = true;
 	glm::vec3 target;
 	glm::vec3 targetDeplacement;
+
 	GameTimer timer;
 	timer.initialize();
-
-	std::vector<Glyph> glyphs;
-	glyphs.reserve(1000);
 
 	while (window.isOpen())
 	{
 		timer.startRenderFrame();
+
 		// check all the window's events that were triggered since the last iteration of the loop
 		sf::Event event;
 		while (window.pollEvent(event))
@@ -271,31 +240,48 @@ int main()
 				window.close();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map.at(player.x, player.y).ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map.at(player.x, player.y).ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map.at(player.x, player.y).ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch+180)));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch+180)));
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
-				map[player.x + player.y * 30].ent = nullptr;
+				map.at(player.x, player.y).ent = nullptr;
 				player.y += glm::round(glm::sin(glm::radians(camera.Pitch )));
 				player.x += glm::round(glm::cos(glm::radians(camera.Pitch )));
 				moved = true;
+			}
+
+			if (event.type == sf::Event::MouseButtonPressed)
+			{
+				if (event.mouseButton.button == sf::Mouse::Right)
+				{
+					if (ui.mousedown == 0)
+						ui.mousedown = 1;
+				}
+			}
+			if (event.type == sf::Event::MouseButtonReleased)
+			{
+				if (event.mouseButton.button == sf::Mouse::Right)
+				{
+					if (ui.mousedown == 1)
+						ui.mousedown = 0;
+				}
 			}
 
 			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
@@ -336,7 +322,7 @@ int main()
 			}
 		}
 
-		player.z = map[player.x + player.y * 30].z;
+		player.z = map.at(player.x, player.y).z;
 		
 		if (firstCam)
 		{
@@ -352,7 +338,7 @@ int main()
 			target = { player.x , player.y , player.z };	
 		}
 
-		map[player.x + player.y * 30].ent = &player;
+		map.at(player.x, player.y).ent = &player;
 
 
 		//wheighted avarege : v = ((v * (N - 1)) + w) / N; fast at start but decrease 
@@ -372,13 +358,9 @@ int main()
 		window.clear(sf::Color::Black);
 		windowTexture.clear(sf::Color::Black);
 
-		glyphs.clear();
-
 		//Gen mapSprite(todo : based on fov) + (todo: light)
 
-		glyphs = camera.to_global(map);
-
-		//glyphs.insert(glyphs.end(), glyphPart2.begin(), glyphPart2.end());
+		std::vector<Glyph> glyphs = camera.to_global(map.cells);
 		
 		//Z-sorting
 		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.orig.z > b.orig.z; });
@@ -391,8 +373,6 @@ int main()
 			camera.m_vertices.append(glyph.vertices[3]);
 
 		}
-		std::cout << timer.getFPS() << std::endl;
-		std::cout << glyphs.size() << std::endl;
 
 		windowTexture.draw(camera.m_vertices, &asciiTexture.getTexture());  //Draw all the ascii sprites
 
@@ -407,7 +387,15 @@ int main()
 		windowTexture.draw(lines);
 
 
-		//sf::Sprite sprite(asciiTexture.getTexture());//c++ runtime checks
+
+		//UI
+		sf::Text fpsTxt("Avg FPS : " + std::to_string(timer.getFPS())
+					+ "\nFPS: " + std::to_string(timer.getLastFrameTime())
+					+ "\nNb Sprites : " + std::to_string(glyphs.size())  , font, 16);
+		ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mousedown * 8) ), fpsTxt, windowTexture);
+
+
+		//sf::Sprite sprite(asciiTexture.getTexture());
 
 		//windowTexture.draw(sprite);
 		windowTexture.display();
@@ -419,11 +407,9 @@ int main()
 
 		window.display();
 
-		//UI
-
 
 		//TIMER
-		timer.sleepAfterRender();
+		//timer.sleepAfterRender();//to force the 60fps when vsync
 		timer.endRenderFrame();
 	}
 

@@ -18,7 +18,7 @@ struct Camera
 	float fov = 30.0f;
 	//double S = 1.0 / (glm::tan(fov / 2.0));
 	float near = 0.1f;
-	float far = 100.f;
+	float far = 1000.f;
 	float heightOfNearPlane;
 
 	glm::vec4 viewport;
@@ -221,7 +221,7 @@ struct Camera
 			if (cell.visible == true)
 			{
 				sprites.push_back(spriteFromCell(cell));
-				if (cell.glyph == '#')
+				if (cell.glyph == '#' && cell.ent == nullptr)
 				{
 					sprites.push_back(spriteFromCell(cell,0.4f));
 					sprites.push_back(spriteFromCell(cell, 0.8f));
@@ -306,19 +306,44 @@ struct Camera
 				glyph.vertices[2] = quad3;
 				glyph.vertices[3] = quad4;
 				glyph.orig = orig;
-			}
-			else
-			{
-				glyph.orig = orig;
-				glyph.orig.z = -1;
-			}
 
-			glyphs.push_back(glyph);
-		
+				glyphs.push_back(glyph);
+			}
 		}
 		return glyphs;
 	}
 };
+
+struct UI
+{
+	int mousex;
+	int mousey;
+	int mousedown;
+
+	int hotitem;
+	int activeitem;
+
+	//TODO : add pool of event
+
+	void drawRect(int x, int y, int w, int h, const sf::Color& color,sf::Text& text, sf::RenderTexture& texture)
+	{
+		sf::RectangleShape rectangle;
+		rectangle.setSize(sf::Vector2f(text.getGlobalBounds().width , text.getGlobalBounds().height));
+		rectangle.setFillColor(color);
+		rectangle.setOutlineColor(sf::Color::Black);
+		rectangle.setOutlineThickness(2);
+		rectangle.setPosition(x, y);
+
+		texture.draw(rectangle);
+		texture.draw(text);
+	}
+
+};
+
+
+
+
+
 //
 /* NOT USED, but in case of
 	sf::Shader shader;
