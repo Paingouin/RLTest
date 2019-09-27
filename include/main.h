@@ -28,7 +28,6 @@
 #define FONT_FILENAME			     "./Fonts/square.ttf"
 
 
-
 // Include the STB image library - only the PNG support
 //#define STB_IMAGE_IMPLEMENTATION
 //#define STBI_ONLY_PNG
@@ -56,7 +55,6 @@ typedef unsigned char asciiChar;
 									&imgWidth, &imgHeight,
 									&numComponents, STBI_rgb_alpha);
 
-
 	do a malloc, get all data on memory and free
 
 stbi_image_free(imgData);
@@ -71,7 +69,7 @@ stbi_image_free(imgData);
 
 #define COLOR_FROM_RGBA(r, g, b, a) ((r << 24) | (g << 16) | (b << 8) | a)
 
-
+/*-------------------------------------------------------------------------------------------------------------------------*/
 
 struct GameConfig
 {
@@ -154,14 +152,10 @@ struct Map
 	}
 };
 
-//Render
-struct Sprite {
-	glm::vec4 coordinates[5]; //pos, LU ,RU, RB, LB
-	Cell* cell;
-};
-
 struct Glyph
 {
+	glm::vec4 coordinates[5]; //pos, LU ,RU, RB, LB
+	Cell* cell;
 	glm::vec4  orig;
 	sf::Vertex vertices[4];
 };

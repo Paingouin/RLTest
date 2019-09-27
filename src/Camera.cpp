@@ -114,7 +114,7 @@ struct Camera
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-	void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true)
+	inline void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true)
 	{
 		xoffset *= MouseSensitivity;
 		yoffset *= MouseSensitivity;
@@ -135,7 +135,7 @@ struct Camera
 	}
 
 	// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
-	void ProcessMouseScroll(float yoffset)
+	inline void ProcessMouseScroll(float yoffset)
 	{
 		Zoom -= yoffset;
 
@@ -148,10 +148,10 @@ struct Camera
 			Zoom = 90.0f;
 	}
 
-	Sprite  __fastcall spriteFromCell(Cell& cell, double heightMod = 0.f)
+	Glyph  __fastcall spriteFromCell(Cell& cell, double heightMod = 0.f)
 	{
-		Sprite sprite = {};
-		sprite.cell = &cell;
+		Glyph glyph = {};
+		glyph.cell = &cell;
 
 		glm::vec4 orig;
 		if (cell.ent == nullptr)
@@ -197,21 +197,21 @@ struct Camera
 		LB += pos;
 
 
-		sprite.coordinates[0] = pos;
-		sprite.coordinates[1] = LU;
-		sprite.coordinates[2] = RU;
-		sprite.coordinates[3] = RB;
-		sprite.coordinates[4] = LB;
+		glyph.coordinates[0] = pos;
+		glyph.coordinates[1] = LU;
+		glyph.coordinates[2] = RU;
+		glyph.coordinates[3] = RB;
+		glyph.coordinates[4] = LB;
 
-		return sprite;
+		return glyph;
 	}
 	 
 
-	//Calculate Global position on screen based of camera
-	inline const std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
+	//Calculate Global position of all cells to the screen based of camera
+	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
 	{
-		std::vector<Sprite> sprites;
-		sprites.reserve(cells.size());
+		std::vector<Glyph> glyphs;
+		glyphs.reserve(2000);
 
 		s = glm::sin(glm::radians((180 - Pitch)));
 		c = glm::cos(glm::radians((180 - Pitch)));
@@ -220,38 +220,36 @@ struct Camera
 		{
 			if (cell.visible == true)
 			{
-				sprites.push_back(spriteFromCell(cell));
+				glyphs.push_back(spriteFromCell(cell));
 				if (cell.glyph == '#' && cell.ent == nullptr)
 				{
-					sprites.push_back(spriteFromCell(cell,0.4f));
-					sprites.push_back(spriteFromCell(cell, 0.8f));
+					glyphs.push_back(spriteFromCell(cell,0.4f));
+					glyphs.push_back(spriteFromCell(cell, 0.8f));
 				}
 			}
 		}
 
-		for (Sprite& sprite : sprites)
+		for (Glyph& glyph : glyphs)
 		{
-			for (glm::vec4& point : sprite.coordinates)
+			for (glm::vec4& point : glyph.coordinates)
 			{
 				point = mProjection * point;
 				point /= point.w;
 			}
 		}
 
-		std::vector<Glyph> glyphs;
-		glyphs.reserve(sprites.size());
-		for (Sprite& sprite : sprites)
+		for (Glyph& glyph : glyphs)
 		{
+			glm::vec4 orig = glyph.coordinates[0];
+			glm::vec4 LU = glyph.coordinates[1];
+			glm::vec4 RU = glyph.coordinates[2];
+			glm::vec4 RB = glyph.coordinates[3];
+			glm::vec4 LB = glyph.coordinates[4];
 
-			Glyph glyph = {};
-
-			glm::vec4 orig = sprite.coordinates[0];
-			glm::vec4 LU = sprite.coordinates[1];
-			glm::vec4 RU = sprite.coordinates[2];
-			glm::vec4 RB = sprite.coordinates[3];
-			glm::vec4 LB = sprite.coordinates[4];
-
-			if ((LU.z > 0.f && LU.z < 1.f) && (RU.z > 0.f && RU.z < 1.f) && (RB.z > 0.f && RB.z < 1.f) && (LB.z > 0.f && LB.z < 1.f)) //culling
+			if ((LU.z > 0.f && LU.z < 1.f)
+					&& (RU.z > 0.f && RU.z < 1.f)
+						&& (RB.z > 0.f && RB.z < 1.f) 
+							&& (LB.z > 0.f && LB.z < 1.f)) //culling
 			{
 
 				LU.x = (LU.x * viewport[2]) + viewport[2] / 2;
@@ -289,13 +287,13 @@ struct Camera
 				//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
 				//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
 				//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
-				char lettre = (sprite.cell->ent != nullptr) ?   sprite.cell->ent->glyph : sprite.cell->glyph;
+				char lettre = (glyph.cell->ent != nullptr) ? glyph.cell->ent->glyph : glyph.cell->glyph;
 				quad1.texCoords = sf::Vector2f((lettre - 31) * 128, 9);
 				quad2.texCoords = sf::Vector2f(127 + (lettre - 31) * 128, 9);
 				quad3.texCoords = sf::Vector2f(127 + (lettre - 31) * 128, 138);
 				quad4.texCoords = sf::Vector2f((lettre - 31) * 128, 138);
 
-				sf::Color color = (sprite.cell->ent != nullptr) ?  sprite.cell->ent->baseColor : sprite.cell->baseColor ;
+				sf::Color color = (glyph.cell->ent != nullptr) ? glyph.cell->ent->baseColor : glyph.cell->baseColor ;
 				quad1.color = color;
 				quad2.color = color;
 				quad3.color = color;
@@ -306,8 +304,6 @@ struct Camera
 				glyph.vertices[2] = quad3;
 				glyph.vertices[3] = quad4;
 				glyph.orig = orig;
-
-				glyphs.push_back(glyph);
 			}
 		}
 		return glyphs;
@@ -316,15 +312,32 @@ struct Camera
 
 struct UI
 {
-	int mousex;
-	int mousey;
-	int mousedown;
+	int mouseX;
+	int mouseY;
+	int mouseDown;
 
-	int hotitem;
-	int activeitem;
+	int hotItem;
+	int activeItem;
 
 	//TODO : add pool of event
 
+	void prepare()
+	{
+		hotItem = 0;
+	}
+
+	void finish()
+	{
+		if (mouseDown == 0)
+		{
+			activeItem = 0;
+		}
+		else
+		{
+			if (activeItem == 0)
+				activeItem = -1; 
+		}
+	}
 	void drawRect(int x, int y, int w, int h, const sf::Color& color,sf::Text& text, sf::RenderTexture& texture)
 	{
 		sf::RectangleShape rectangle;
@@ -336,6 +349,46 @@ struct UI
 
 		texture.draw(rectangle);
 		texture.draw(text);
+	}
+
+	int regionHit(int x, int y, int w, int h)
+	{
+		if (mouseX < x || mouseY < y || mouseX >= x + w || mouseY >= y + h)
+		{
+			return 0;
+		}
+		return 1;
+	}
+
+	int button(int id, int x, int y, int w, int h )
+	{
+		if (regionHit(x, y, w, h))
+		{
+			hotItem = id;
+			if (activeItem == 0 && mouseDown)
+			{
+				activeItem = id;
+			}
+		}
+
+		//DRAW
+
+		if (hotItem == id)
+		{
+			if (activeItem == id)
+			{
+			}
+		}  
+		
+		// If button is hot and active, but mouse button is not
+		// down, the user must have clicked the button.
+		if (mouseDown == 0 &&
+			hotItem == id &&
+			activeItem == id)
+			return 1;
+
+		// Otherwise, no clicky.
+		return 0;
 	}
 
 };

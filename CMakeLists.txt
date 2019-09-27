@@ -74,6 +74,9 @@ add_custom_command(TARGET RLTestBin POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_INSTALL_PREFIX}/ressources"
        "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}")
+
+#add_custom_command(TARGET RLTestBin POST_BUILD
+#    COMMAND  signtool sign  /debug /a $<TARGET_FILE:RLTestBin>)
 			
 
 	   

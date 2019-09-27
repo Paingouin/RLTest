@@ -189,7 +189,7 @@ int main()
 
 	//MAP
 	Map map;
-	map.genRectangleRoom(25, 25);
+	map.genRectangleRoom(30, 30);
 
 	//Control
 	Controller control = {};
@@ -269,18 +269,18 @@ int main()
 
 			if (event.type == sf::Event::MouseButtonPressed)
 			{
-				if (event.mouseButton.button == sf::Mouse::Right)
+				if (event.mouseButton.button == sf::Mouse::Left)
 				{
-					if (ui.mousedown == 0)
-						ui.mousedown = 1;
+					if (ui.mouseDown == 0)
+						ui.mouseDown = 1;
 				}
 			}
 			if (event.type == sf::Event::MouseButtonReleased)
 			{
-				if (event.mouseButton.button == sf::Mouse::Right)
+				if (event.mouseButton.button == sf::Mouse::Left)
 				{
-					if (ui.mousedown == 1)
-						ui.mousedown = 0;
+					if (ui.mouseDown == 1)
+						ui.mouseDown = 0;
 				}
 			}
 
@@ -347,7 +347,10 @@ int main()
 
 		camera.updateCameraVectors(targetDeplacement);
 
+		//DO FOV
 		calculateFOV(map, player.x, player.y, 10);
+		//DO LIGHT
+
 
 		while (timer.doUpdate());
 
@@ -357,8 +360,6 @@ int main()
 
 		window.clear(sf::Color::Black);
 		windowTexture.clear(sf::Color::Black);
-
-		//Gen mapSprite(todo : based on fov) + (todo: light)
 
 		std::vector<Glyph> glyphs = camera.to_global(map.cells);
 		
@@ -389,10 +390,15 @@ int main()
 
 
 		//UI
+		ui.prepare();
 		sf::Text fpsTxt("Avg FPS : " + std::to_string(timer.getFPS())
 					+ "\nFPS: " + std::to_string(timer.getLastFrameTime())
-					+ "\nNb Sprites : " + std::to_string(glyphs.size())  , font, 16);
-		ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mousedown * 8) ), fpsTxt, windowTexture);
+					+ "\nNb Sprites : " + std::to_string(glyphs.size())
+					+ "\nPos Player X:" + std::to_string((int)player.x) + " Y:" + std::to_string((int)player.y)
+					, font, 16);
+		ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mouseDown * 8) ), fpsTxt, windowTexture);
+
+		ui.finish();
 
 
 		//sf::Sprite sprite(asciiTexture.getTexture());
