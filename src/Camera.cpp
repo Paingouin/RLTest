@@ -50,14 +50,14 @@ struct Camera
 		posOffset.y = Zoom * sin(glm::radians(Pitch)) * sin(glm::radians(Yaw));
 		posOffset.z = Zoom * cos(glm::radians(Yaw));
 
-		glm::dmat4 mScale =
+		glm::aligned_mat4x4 mScale =
 		{
 			 1.f , 0.f, 0.f, 0.f,
 			 0.f , 1.f, 0.f, 0.f,
 			 0.f , 0.f, 1.f, 0.f,
 			 0.f , 0.f, 0.f, 1.f
 		};
-		glm::dmat4 mTranslate =
+		glm::aligned_mat4x4 mTranslate =
 		{
 			 1.f , 0.f, 0.f, 0.0f,//X
 			 0.f , 1.f, 0.f, 0.0f,//Y
@@ -80,8 +80,8 @@ struct Camera
 		 //model = glm::dmat4(1.0f); // make sure to initialize matrix to identity matrix first;
 	 //translation*rotation*scale
 	
-		glm::vec4 camPos = {(float) Position.x +posOffset.x , (float)Position.y + posOffset.y,(float)Position.z + posOffset.z  , 1.f };
-		glm::vec4 tarPos = { (float) target.x  , (float)target.y , (float)target.z  , 1.f };
+		glm::aligned_vec4 camPos = {(float) Position.x +posOffset.x , (float)Position.y + posOffset.y,(float)Position.z + posOffset.z  , 1.f };
+		glm::aligned_vec4 tarPos = { (float) target.x  , (float)target.y , (float)target.z  , 1.f };
 		camFront = { 0.0f, 0.0f,1.f};
 
 		//mRotate = glm::rotate(glm::radians(-Pitch - 180), camFront);
