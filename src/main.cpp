@@ -189,7 +189,7 @@ int main()
 
 	//MAP
 	Map map;
-	map.genRectangleRoom(30, 30);
+	map.genRectangleRoom(25, 25);
 
 	//Control
 	Controller control = {};
@@ -366,13 +366,14 @@ int main()
 		//Z-sorting
 		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.orig.z > b.orig.z; });
 
+		camera.m_vertices.resize(glyphs.size()*4);
+		int i = 0;
 		for (Glyph& glyph : glyphs)
 		{
-			camera.m_vertices.append(glyph.vertices[0]);
-			camera.m_vertices.append(glyph.vertices[1]);
-			camera.m_vertices.append(glyph.vertices[2]);
-			camera.m_vertices.append(glyph.vertices[3]);
-
+			camera.m_vertices[i++] = glyph.vertices[0];
+			camera.m_vertices[i++] = glyph.vertices[1];
+			camera.m_vertices[i++] = glyph.vertices[2];
+			camera.m_vertices[i++] = glyph.vertices[3];
 		}
 
 		windowTexture.draw(camera.m_vertices, &asciiTexture.getTexture());  //Draw all the ascii sprites

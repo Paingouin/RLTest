@@ -210,7 +210,7 @@ struct Camera
 	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
 	{
 		Glyphs glyphs;
-		glyphs.coordinates.reserve(cells.size() * 6);
+		glyphs.coordinates.reserve(cells.size() * 10);
 		glyphs.cells.reserve(cells.size());
 
 		s = glm::sin(glm::radians((180 - Pitch)));
