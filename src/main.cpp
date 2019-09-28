@@ -134,7 +134,7 @@ int main()
 	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
-	//window.setFramerateLimit(60);
+	window.setFramerateLimit(60);
 
 
 	sf::Font font;
@@ -415,7 +415,7 @@ int main()
 
 
 		//TIMER
-		//timer.sleepAfterRender();//to force the 60fps when vsync
+		timer.sleepAfterRender();//to force the 60fps when vsync
 		timer.endRenderFrame();
 	}
 

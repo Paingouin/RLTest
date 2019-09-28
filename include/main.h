@@ -154,8 +154,15 @@ struct Map
 
 struct Glyph
 {
-	glm::vec4 coordinates[5]; //pos, LU ,RU, RB, LB
+	sf::Vertex vertices[4]; //pos, LU ,RU, RB, LB
 	Cell* cell;
-	glm::vec4  orig;
-	sf::Vertex vertices[4];
+
+	glm::vec4 orig;
+};
+
+
+struct Glyphs
+{
+	std::vector<glm::vec4> coordinates; //pos, LU ,RU, RB, LB
+	std::vector<Cell*> cells;
 };

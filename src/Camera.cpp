@@ -148,11 +148,9 @@ struct Camera
 			Zoom = 90.0f;
 	}
 
-	Glyph  __fastcall spriteFromCell(Cell& cell, double heightMod = 0.f)
+	//TODO:check fixed array
+	void  __fastcall spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f)
 	{
-		Glyph glyph = {};
-		glyph.cell = &cell;
-
 		glm::vec4 orig;
 		if (cell.ent == nullptr)
 		{
@@ -197,54 +195,61 @@ struct Camera
 		LB += pos;
 
 
-		glyph.coordinates[0] = pos;
-		glyph.coordinates[1] = LU;
-		glyph.coordinates[2] = RU;
-		glyph.coordinates[3] = RB;
-		glyph.coordinates[4] = LB;
+		glyphs.coordinates.push_back(pos);
+		glyphs.coordinates.push_back(LU);
+		glyphs.coordinates.push_back(RU);
+		glyphs.coordinates.push_back(RB);
+		glyphs.coordinates.push_back(LB);
 
-		return glyph;
+		glyphs.cells.push_back(&cell);
+
 	}
 	 
 
 	//Calculate Global position of all cells to the screen based of camera
 	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
 	{
-		std::vector<Glyph> glyphs;
-		glyphs.reserve(2000);
+		Glyphs glyphs;
+		glyphs.coordinates.reserve(cells.size() * 5);
+		glyphs.cells.reserve(cells.size());
+
+		
 
 		s = glm::sin(glm::radians((180 - Pitch)));
 		c = glm::cos(glm::radians((180 - Pitch)));
+
 
 		for (Cell& cell : cells)
 		{
 			if (cell.visible == true)
 			{
-				glyphs.push_back(spriteFromCell(cell));
+				spriteFromCell(glyphs, cell);
 				if (cell.glyph == '#' && cell.ent == nullptr)
 				{
-					glyphs.push_back(spriteFromCell(cell,0.4f));
-					glyphs.push_back(spriteFromCell(cell, 0.8f));
+					spriteFromCell(glyphs, cell,0.4f);
+					spriteFromCell(glyphs, cell,0.8f);
 				}
 			}
 		}
 
-		for (Glyph& glyph : glyphs)
+
+		for (glm::vec4& point : glyphs.coordinates)
 		{
-			for (glm::vec4& point : glyph.coordinates)
-			{
-				point = mProjection * point;
-				point /= point.w;
-			}
+			point = mProjection * point;
+			point /= point.w;
 		}
 
-		for (Glyph& glyph : glyphs)
+		std::vector<Glyph> returnedGlyph;
+		returnedGlyph.resize(glyphs.coordinates.size() / 5);
+
+		int cellCount = 0;
+		for (auto i = glyphs.coordinates.begin() ; i != glyphs.coordinates.end();)
 		{
-			glm::vec4 orig = glyph.coordinates[0];
-			glm::vec4 LU = glyph.coordinates[1];
-			glm::vec4 RU = glyph.coordinates[2];
-			glm::vec4 RB = glyph.coordinates[3];
-			glm::vec4 LB = glyph.coordinates[4];
+			glm::vec4 orig = *i++;
+			glm::vec4 LU = *i++;
+			glm::vec4 RU = *i++;
+			glm::vec4 RB = *i++;
+			glm::vec4 LB = *i++;
 
 			if ((LU.z > 0.f && LU.z < 1.f)
 					&& (RU.z > 0.f && RU.z < 1.f)
@@ -287,26 +292,31 @@ struct Camera
 				//quad2.texCoords = sf::Vector2f(textcoor.left + textcoor .width, textcoor.top );
 				//quad3.texCoords = sf::Vector2f(textcoor.left + textcoor.width, textcoor.top+ textcoor.height);
 				//quad4.texCoords = sf::Vector2f(textcoor.left , textcoor.top +textcoor.height);
-				char lettre = (glyph.cell->ent != nullptr) ? glyph.cell->ent->glyph : glyph.cell->glyph;
+				char lettre = (glyphs.cells[cellCount]->ent != nullptr) ? glyphs.cells[cellCount]->ent->glyph : glyphs.cells[cellCount]->glyph;
 				quad1.texCoords = sf::Vector2f((lettre - 31) * 128, 9);
 				quad2.texCoords = sf::Vector2f(127 + (lettre - 31) * 128, 9);
 				quad3.texCoords = sf::Vector2f(127 + (lettre - 31) * 128, 138);
 				quad4.texCoords = sf::Vector2f((lettre - 31) * 128, 138);
 
-				sf::Color color = (glyph.cell->ent != nullptr) ? glyph.cell->ent->baseColor : glyph.cell->baseColor ;
+				sf::Color color = (glyphs.cells[cellCount]->ent != nullptr) ? glyphs.cells[cellCount]->ent->baseColor : glyphs.cells[cellCount]->baseColor ;
 				quad1.color = color;
 				quad2.color = color;
 				quad3.color = color;
 				quad4.color = color;
+
+				Glyph glyph;
 
 				glyph.vertices[0] = quad1;
 				glyph.vertices[1] = quad2;
 				glyph.vertices[2] = quad3;
 				glyph.vertices[3] = quad4;
 				glyph.orig = orig;
+				glyph.cell = glyphs.cells[cellCount];
+				returnedGlyph[cellCount] = glyph;
+				++cellCount;
 			}
 		}
-		return glyphs;
+		return returnedGlyph;
 	}
 };
 

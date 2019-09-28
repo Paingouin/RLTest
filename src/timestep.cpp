@@ -148,7 +148,7 @@ struct GameTimer
 	void sleepAfterRender()
 	{
 		//get Time to sleep in microseconds
-		int timeSleep =( dtimeRender -deltaTime >0)? dtimeRender - deltaTime : 0;
+		int timeSleep =( dtimeRender -deltaTime >3)? dtimeRender - deltaTime : 0;
 		sf::sleep(sf::microseconds(timeSleep));
 		//while (timeSleep > 2000) //If we can sleep at least 1 ms
 		//{
