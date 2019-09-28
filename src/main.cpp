@@ -60,6 +60,7 @@ void castLight(Map& map, int row, int startX, int startY, double start, double e
 			else if (end > leftSlope) {
 				break;
 			}
+			
 
 			//check if it's within the lightable area and light if needed
 			if ((deltaX * deltaX) + (deltaY * deltaY) <
@@ -189,7 +190,7 @@ int main()
 
 	//MAP
 	Map map;
-	map.genRectangleRoom(20,20);
+	map.genRectangleRoom(30,30);
 
 	//Control
 	Controller control = {};
@@ -221,8 +222,8 @@ int main()
 
 	bool moved = true;
 	bool firstCam = true;
-	glm::vec3 target;
-	glm::vec3 targetDeplacement;
+	glm::aligned_vec3 target;
+	glm::aligned_vec3 targetDeplacement;
 
 	GameTimer timer;
 	timer.initialize();

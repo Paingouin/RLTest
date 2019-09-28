@@ -21,18 +21,18 @@ struct Camera
 	float far = 1000.f;
 	float heightOfNearPlane;
 
-	glm::vec4 viewport;
-	glm::vec4 camRight;
-	glm::vec4 camUp;
-	glm::vec3 camFront;
-	glm::dmat4 mModel;
-	glm::dmat4 mRotate;
-	glm::dmat4 mView;
-	glm::dmat4 mProjection;
-	glm::dmat4 mModelView;
-	glm::dmat4 mTotal;
+	glm::aligned_vec4 viewport;
+	glm::aligned_vec4 camRight;
+	glm::aligned_vec4 camUp;
+	glm::aligned_vec3 camFront;
+	glm::aligned_mat4x4 mModel;
+	glm::aligned_mat4x4 mRotate;
+	glm::aligned_mat4x4 mView;
+	glm::aligned_mat4x4 mProjection;
+	glm::aligned_mat4x4 mModelView;
+	glm::aligned_mat4x4 mTotal;
 
-	glm::vec3 posOffset;
+	glm::aligned_vec3 posOffset;
 
 	sf::VertexArray m_vertices;
 
@@ -42,7 +42,7 @@ struct Camera
 
 
 	// Calculates the front vector from the Camera's (updated) Euler Angles
-	void updateCameraVectors(glm::vec3 target)
+	void updateCameraVectors(glm::aligned_vec3 target)
 	{
 		// Calculate the new position of the camera
 		
@@ -148,10 +148,9 @@ struct Camera
 			Zoom = 90.0f;
 	}
 
-	//TODO:check fixed array
 	void  __fastcall spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f)
 	{
-		glm::vec4 orig;
+		glm::aligned_vec4 orig;
 		if (cell.ent == nullptr)
 		{
 			orig = { cell.x, cell.y, cell.z + heightMod, 1.f };
@@ -162,11 +161,11 @@ struct Camera
 		}
 			
 		
-		glm::vec4 pos = mModelView * orig * (double)1.7f;
-		glm::vec4 LU = { -0.5,     0.5, pos.z ,1.f };
-		glm::vec4 RU = { 0.5,     0.5, pos.z ,1.f };
-		glm::vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
-		glm::vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
+		glm::aligned_vec4 pos = mModelView * orig * 1.7f;
+		glm::aligned_vec4 LU = { -0.5,     0.5, pos.z ,1.f };
+		glm::aligned_vec4 RU = { 0.5,     0.5, pos.z ,1.f };
+		glm::aligned_vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
+		glm::aligned_vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
 
 		if (cell.ent  == nullptr)
 		{
@@ -195,16 +194,16 @@ struct Camera
 		LB += pos;
 
 
-		glyphs.coordinates.push_back(pos);
-		glyphs.coordinates.push_back(LU);
-		glyphs.coordinates.push_back(RU);
-		glyphs.coordinates.push_back(RB);
-		glyphs.coordinates.push_back(LB);
+		glyphs.coordinates.emplace_back(pos);
+		glyphs.coordinates.emplace_back(LU);
+		glyphs.coordinates.emplace_back(RU);
+		glyphs.coordinates.emplace_back(RB);
+		glyphs.coordinates.emplace_back(LB);
 
-		glyphs.cells.push_back(&cell);
+		glyphs.cells.emplace_back(&cell);
 
 	}
-	 
+
 
 	//Calculate Global position of all cells to the screen based of camera
 	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
@@ -231,12 +230,12 @@ struct Camera
 		}
 
 
-		for (glm::vec4& point : glyphs.coordinates)
+		for (glm::aligned_vec4& point : glyphs.coordinates)
 		{
 			point = mProjection * point;
 		}
 
-		for (glm::vec4& point : glyphs.coordinates)
+		for (glm::aligned_vec4& point : glyphs.coordinates)
 		{
 			point /= point.w;
 		}
@@ -244,15 +243,14 @@ struct Camera
 
 		std::vector<Glyph> returnedGlyph;
 		returnedGlyph.reserve(glyphs.coordinates.size() / 5);
-
 		
 		for (int i = 0 ,cellCount = 0;  i < glyphs.coordinates.size(); )
 		{
-			glm::vec4 orig = glyphs.coordinates[i++];
-			glm::vec4 LU = glyphs.coordinates[i++];
-			glm::vec4 RU = glyphs.coordinates[i++];
-			glm::vec4 RB = glyphs.coordinates[i++];
-			glm::vec4 LB = glyphs.coordinates[i++];
+			glm::aligned_vec4 orig = glyphs.coordinates[i++];
+			glm::aligned_vec4 LU = glyphs.coordinates[i++];
+			glm::aligned_vec4 RU = glyphs.coordinates[i++];
+			glm::aligned_vec4 RB = glyphs.coordinates[i++];
+			glm::aligned_vec4 LB = glyphs.coordinates[i++];
 
 			if ((LU.z > 0.f && LU.z < 1.f)
 					&& (RU.z > 0.f && RU.z < 1.f)

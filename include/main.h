@@ -13,6 +13,7 @@
 #define GLM_FORCE_INTRINSICS
 #define GLM_FORCE_INLINE
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_ALIGNED_GENTYPES
 
 #include "glm/glm.hpp"
 #include "glm/vec3.hpp" // glm::vec3
@@ -22,6 +23,7 @@
 #include "glm/ext/matrix_clip_space.hpp" // glm::perspective
 #include "glm/gtc/constants.hpp"
 #include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_aligned.hpp"
 
 
 #define POST_SHADER_FILENAME         "./Shaders/post.frag"
@@ -157,12 +159,12 @@ struct Glyph
 	sf::Vertex vertices[4]; //pos, LU ,RU, RB, LB
 	Cell* cell;
 
-	glm::vec4 orig;
+	glm::aligned_vec4 orig;
 };
 
 
 struct Glyphs
 {
-	std::vector<glm::vec4> coordinates; //pos, LU ,RU, RB, LB
+	std::vector<glm::aligned_vec4> coordinates; //pos, LU ,RU, RB, LB
 	std::vector<Cell*> cells;
 };
