@@ -234,8 +234,13 @@ struct Camera
 		for (glm::vec4& point : glyphs.coordinates)
 		{
 			point = mProjection * point;
+		}
+
+		for (glm::vec4& point : glyphs.coordinates)
+		{
 			point /= point.w;
 		}
+
 
 		std::vector<Glyph> returnedGlyph;
 		returnedGlyph.reserve(glyphs.coordinates.size() / 5);

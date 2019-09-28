@@ -189,7 +189,7 @@ int main()
 
 	//MAP
 	Map map;
-	map.genRectangleRoom(25, 25);
+	map.genRectangleRoom(20,20);
 
 	//Control
 	Controller control = {};
