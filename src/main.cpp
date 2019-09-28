@@ -415,7 +415,7 @@ int main()
 
 
 		//TIMER
-		timer.sleepAfterRender();//to force the 60fps when vsync
+		//timer.sleepAfterRender();//to force the 60fps when vsync
 		timer.endRenderFrame();
 	}
 

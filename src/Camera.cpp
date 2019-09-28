@@ -210,10 +210,8 @@ struct Camera
 	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
 	{
 		Glyphs glyphs;
-		glyphs.coordinates.reserve(cells.size() * 5);
+		glyphs.coordinates.reserve(cells.size() * 6);
 		glyphs.cells.reserve(cells.size());
-
-		
 
 		s = glm::sin(glm::radians((180 - Pitch)));
 		c = glm::cos(glm::radians((180 - Pitch)));
@@ -240,16 +238,16 @@ struct Camera
 		}
 
 		std::vector<Glyph> returnedGlyph;
-		returnedGlyph.resize(glyphs.coordinates.size() / 5);
+		returnedGlyph.reserve(glyphs.coordinates.size() / 5);
 
-		int cellCount = 0;
-		for (auto i = glyphs.coordinates.begin() ; i != glyphs.coordinates.end();)
+		
+		for (int i = 0 ,cellCount = 0;  i < glyphs.coordinates.size(); )
 		{
-			glm::vec4 orig = *i++;
-			glm::vec4 LU = *i++;
-			glm::vec4 RU = *i++;
-			glm::vec4 RB = *i++;
-			glm::vec4 LB = *i++;
+			glm::vec4 orig = glyphs.coordinates[i++];
+			glm::vec4 LU = glyphs.coordinates[i++];
+			glm::vec4 RU = glyphs.coordinates[i++];
+			glm::vec4 RB = glyphs.coordinates[i++];
+			glm::vec4 LB = glyphs.coordinates[i++];
 
 			if ((LU.z > 0.f && LU.z < 1.f)
 					&& (RU.z > 0.f && RU.z < 1.f)
@@ -312,9 +310,10 @@ struct Camera
 				glyph.vertices[3] = quad4;
 				glyph.orig = orig;
 				glyph.cell = glyphs.cells[cellCount];
-				returnedGlyph[cellCount] = glyph;
-				++cellCount;
+				returnedGlyph.push_back(glyph);
+			
 			}
+			++cellCount;
 		}
 		return returnedGlyph;
 	}
