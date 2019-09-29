@@ -58,6 +58,7 @@ struct GameTimer
 	sf::Time timeBeginGame;
 
 	sf::Time timeLastGameUpdate;
+	sf::Time timeRenderFrame;
 
 	sf::Clock time;
 	sf::Clock FPStimer;
@@ -101,9 +102,14 @@ struct GameTimer
 
 	inline void endRenderFrame()
 	{
+		timeRenderFrame = time.getElapsedTime() - timeCurrentFrame;
+	}
+
+	inline void endafterSleep()
+	{
 		timeLastFrame = timeCurrentFrame;
 		//if (numberOfFrames < 60)
-			numberOfFrames += 1;
+		numberOfFrames += 1;
 		//else
 		//{
 		//	numberOfFrames = 1;
@@ -123,6 +129,7 @@ struct GameTimer
 
 	double getLastUpdateTime()
 	{
+		return timeRenderFrame.asMicroseconds();
 		//double t = getDurationMicrosec(timeLastGameUpdate, std::chrono::high_resolution_clock::now()) /1000000.0F;
 		//timeLastGameUpdate = std::chrono::high_resolution_clock::now();
 		//return t;
@@ -148,7 +155,8 @@ struct GameTimer
 	void sleepAfterRender()
 	{
 		//get Time to sleep in microseconds
-		int timeSleep =( dtimeRender -deltaTime >3)? dtimeRender - deltaTime : 0;
+		int deltasleep = dtimeRender - (time.getElapsedTime().asMicroseconds() - timeCurrentFrame.asMicroseconds());
+		int timeSleep =(deltasleep > 0 )? deltasleep : 0;
 		sf::sleep(sf::microseconds(timeSleep));
 		//while (timeSleep > 2000) //If we can sleep at least 1 ms
 		//{

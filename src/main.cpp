@@ -20,8 +20,6 @@ Plateform must receive only map(pos+color + state of effects) and send controlle
 
 
 //TODO :
-//		refactor :)
-//		UI
 //		FOV
 //		Light
 //      
@@ -29,6 +27,7 @@ Plateform must receive only map(pos+color + state of effects) and send controlle
 //
 //		Basic dungeon generation/basic 
 //
+//		Item
 //		Basic monster
 //		Mouse picking :  check inside UI, if not , check inside rect for each glyph = rotate the mouse pos by invert rectangle
 
@@ -48,7 +47,8 @@ void castLight(Map& map, int row, int startX, int startY, double start, double e
 	bool blocked = false;
 	for (int distance = row; distance <= radius && !blocked; distance++) {
 		int deltaY = -distance;
-		for (int deltaX = -distance; deltaX <= 0; deltaX++) {
+		for (int deltaX = -distance; deltaX <= 0; deltaX++)
+		{
 			int currentX = startX + deltaX * xx + deltaY * xy;
 			int currentY = startY + deltaX * yx + deltaY * yy;
 			double leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
@@ -135,7 +135,7 @@ int main()
 	bool firstMouse = true;
 
 	window.setVerticalSyncEnabled(true);
-	window.setFramerateLimit(60);
+	//window.setFramerateLimit(60);
 
 
 	sf::Font font;
@@ -393,8 +393,10 @@ int main()
 
 		//UI
 		ui.prepare();
+		timer.endRenderFrame();
 		sf::Text fpsTxt("Avg FPS : " + std::to_string(timer.getFPS())
 					+ "\nFPS: " + std::to_string(timer.getLastFrameTime())
+					+ "\nTimeForCalc: " + std::to_string(timer.getLastUpdateTime())
 					+ "\nNb Sprites : " + std::to_string(glyphs.size())
 					+ "\nPos Player X:" + std::to_string((int)player.x) + " Y:" + std::to_string((int)player.y)
 					, font, 16);
@@ -417,8 +419,8 @@ int main()
 
 
 		//TIMER
-		//timer.sleepAfterRender();//to force the 60fps when vsync
-		timer.endRenderFrame();
+		timer.sleepAfterRender();//to force the 60fps when vsync
+		timer.endafterSleep();
 	}
 
 	return 0;
