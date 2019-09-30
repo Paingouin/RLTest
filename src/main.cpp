@@ -37,60 +37,6 @@ struct Controller
 	int32 lastPosMouseX, lastPosMouseZ;
 };
 
-
-void castLight(Map& map, int row, int startX, int startY, double start, double end, int xx, int xy, int yx, int yy, double radius)
-{
-	double newStart = 0.0f;
-	if (start < end) {
-		return;
-	}
-	bool blocked = false;
-	for (int distance = row; distance <= radius && !blocked; distance++) {
-		int deltaY = -distance;
-		for (int deltaX = -distance; deltaX <= 0; deltaX++)
-		{
-			int currentX = startX + deltaX * xx + deltaY * xy;
-			int currentY = startY + deltaX * yx + deltaY * yy;
-			double leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
-			double rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
-
-			if (!(currentX >= 0 && currentY >= 0 && currentX < 25 && currentY < 25) || start < rightSlope) {
-				continue;
-			}
-			else if (end > leftSlope) {
-				break;
-			}
-			
-
-			//check if it's within the lightable area and light if needed
-			if ((deltaX * deltaX) + (deltaY * deltaY) <
-			((radius - 3) * (radius - 3))) {
-				//double bright = (double)(1 - (rStrat.radius(deltaX, deltaY) / radius));
-				map.at(currentX, currentY).visible = true;
-			}
-		
-
-			if (blocked) { //previous cell was a blocking one
-				if (map.at(currentX, currentY).block >= 1) {//hit a wall
-					newStart = rightSlope;
-					continue;
-				}
-				else {
-					blocked = false;
-					start = newStart;
-				}
-			}
-			else {
-				if (map.at(currentX, currentY).block >= 1 && distance < radius) {//hit a wall within sight line
-					blocked = true;
-					castLight(map, distance + 1, startX, startY, start, leftSlope, xx, xy, yx, yy, radius);
-					newStart = rightSlope;
-				}
-			}
-		}
-	}
-}
-
 //radius: max distance FOV;
 void calculateFOV(Map& map,  int startX, int startY, double radius)
 {
@@ -99,17 +45,17 @@ void calculateFOV(Map& map,  int startX, int startY, double radius)
 		cell.visible = true;
 	}
 
-	map.at(startX,startY).visible = true;
-	
-	//For each diagonals
-	castLight(map, 1, startX , startY, 1.0f, 0.0f, 0, -1, 1, 0, radius);
-	castLight(map, 1, startX, startY, 1.0f, 0.0f, -1, 0, 0, 1, radius);
-	castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, 1, 0, radius);
-	castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, 1, radius);
-	castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, -1, 0, radius);
-	castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, -1, radius);
-	castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, -1, -1, 0, radius);
-	castLight(map, 1, startX, startY, 1.0f, 0.0f,-1, 0, 0, -1, radius);
+	//map.at(startX,startY).visible = true;
+	//
+	////For each diagonals
+	//castLight(map, 1, startX , startY, 1.0f, 0.0f, 0, -1, 1, 0, radius);
+	//castLight(map, 1, startX, startY, 1.0f, 0.0f, -1, 0, 0, 1, radius);
+	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, 1, 0, radius);
+	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, 1, radius);
+	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, -1, 0, radius);
+	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, -1, radius);
+	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, -1, -1, 0, radius);
+	//castLight(map, 1, startX, startY, 1.0f, 0.0f,-1, 0, 0, -1, radius);
 	
 }
 
@@ -134,7 +80,7 @@ int main()
 	double lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
 	bool firstMouse = true;
 
-	window.setVerticalSyncEnabled(true);
+	//window.setVerticalSyncEnabled(true);
 	//window.setFramerateLimit(60);
 
 

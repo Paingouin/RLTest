@@ -3,8 +3,8 @@
 struct Camera
 {
 	// Camera Attributes
-	glm::vec3 Position;
-	glm::vec3 LastPosition;
+	glm::aligned_vec3 Position;
+	glm::aligned_vec3 LastPosition;
 
 	// Euler Angles
 	float Yaw;
@@ -86,8 +86,8 @@ struct Camera
 
 		//mRotate = glm::rotate(glm::radians(-Pitch - 180), camFront);
 		mModel = mTranslate * mScale;
-		glm::vec3 camPos3 = mModel * camPos;
-		glm::vec3 tarPos3 = mModel * tarPos;
+		glm::aligned_vec3 camPos3 = mModel * camPos;
+		glm::aligned_vec3 tarPos3 = mModel * tarPos;
 		//std::cout << "before cam:" << camPos3.x << " : " << camPos3.y << " : " << camPos3.z << std::endl;
 		mView = glm::lookAtRH(
 			camPos3, // Camera in World Space  
@@ -160,47 +160,43 @@ struct Camera
 			orig = { cell.ent->x, cell.ent->y, cell.ent->z + heightMod, 1.f };
 		}
 			
-		
-		glm::aligned_vec4 pos = mModelView * orig * 1.7f;
-		glm::aligned_vec4 LU = { -0.5,     0.5, pos.z ,1.f };
-		glm::aligned_vec4 RU = { 0.5,     0.5, pos.z ,1.f };
-		glm::aligned_vec4 RB = { 0.5,   -0.5, pos.z ,1.f };
-		glm::aligned_vec4 LB = { -0.5,   -0.5, pos.z ,1.f };
+		glm::aligned_vec4 a[5];
+		a[0] = mModelView * orig * 1.7f;  //POS : center
+		a[1] = { -0.5,     0.5, a[0].z ,1.f }; //LU
+		a[2] = { 0.5,     0.5, a[0].z ,1.f }; //RU
+		a[3] = { 0.5,   -0.5, a[0].z ,1.f };  //RB
+		a[4] = { -0.5,   -0.5, a[0].z ,1.f }; //LB
 
 		if (cell.ent  == nullptr)
 		{
-			float tmpX = LU.x;
-			float tmpY = LU.y;
-			LU.x = tmpX * c - tmpY * s;
-			LU.y = tmpX * s + tmpY * c;
-			tmpX = RU.x;
-			tmpY = RU.y;
-			RU.x = tmpX * c - tmpY * s;
-			RU.y = tmpX * s + tmpY * c;
-			tmpX = RB.x;
-			tmpY = RB.y;
-			RB.x = tmpX * c - tmpY * s;
-			RB.y = tmpX * s + tmpY * c;
-			tmpX = LB.x;
-			tmpY = LB.y;
-			LB.x = tmpX * c - tmpY * s;
-			LB.y = tmpX * s + tmpY * c;
+			float tmpX = a[1].x;
+			float tmpY = a[1].y;
+			a[1].x = tmpX * c - tmpY * s;
+			a[1].y = tmpX * s + tmpY * c;
+			tmpX = a[2].x;
+			tmpY = a[2].y;
+			a[2].x = tmpX * c - tmpY * s;
+			a[2].y = tmpX * s + tmpY * c;
+			tmpX = a[3].x;
+			tmpY = a[3].y;
+			a[3].x = tmpX * c - tmpY * s;
+			a[3].y = tmpX * s + tmpY * c;
+			tmpX = a[4].x;
+			tmpY = a[4].y;
+			a[4].x = tmpX * c - tmpY * s;
+			a[4].y = tmpX * s + tmpY * c;
 
 		}
 
-		LU += pos;
-		RU += pos;
-		RB += pos;
-		LB += pos;
+		a[1] += a[0];
+		a[2] += a[0];
+		a[3] += a[0];
+		a[4] += a[0];
 
 
-		glyphs.coordinates.emplace_back(pos);
-		glyphs.coordinates.emplace_back(LU);
-		glyphs.coordinates.emplace_back(RU);
-		glyphs.coordinates.emplace_back(RB);
-		glyphs.coordinates.emplace_back(LB);
+		glyphs.coordinates.insert(glyphs.coordinates.end(), a, a + (sizeof(a) / sizeof(a[0])));
 
-		glyphs.cells.emplace_back(&cell);
+		glyphs.cells.push_back(&cell);
 
 	}
 
@@ -209,8 +205,8 @@ struct Camera
 	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
 	{
 		Glyphs glyphs;
-		glyphs.coordinates.reserve(cells.size() * 10);
-		glyphs.cells.reserve(cells.size());
+		glyphs.coordinates.reserve(cells.size() * 12);
+		glyphs.cells.reserve(cells.size()* 12);
 
 		s = glm::sin(glm::radians((180 - Pitch)));
 		c = glm::cos(glm::radians((180 - Pitch)));
@@ -252,10 +248,22 @@ struct Camera
 			glm::aligned_vec4 RB = glyphs.coordinates[i++];
 			glm::aligned_vec4 LB = glyphs.coordinates[i++];
 
-			if ((LU.z > 0.f && LU.z < 1.f)
-					&& (RU.z > 0.f && RU.z < 1.f)
-						&& (RB.z > 0.f && RB.z < 1.f) 
-							&& (LB.z > 0.f && LB.z < 1.f)) //culling
+			if (
+				((LU.z > -1.f && LU.z < 1.f)
+					&& (RU.z > -1.f && RU.z < 1.f)
+						&& (RB.z > -1.f && RB.z < 1.f) 
+							&& (LB.z > -1.f && LB.z < 1.f))
+				 && 
+						((LU.y > -1.f && LU.y < 1.f)
+						&& (RU.y > -1.f && RU.y < 1.f)
+						&& (RB.y > -1.f && RB.y < 1.f)
+						&& (LB.y > -1.f && LB.y < 1.f))
+				&&
+						((LU.x > -1.f && LU.x < 1.f)
+						&& (RU.x > -1.f && RU.x < 1.f)
+						&& (RB.x > -1.f && RB.x < 1.f)
+						&& (LB.x > -1.f && LB.x < 1.f))
+				) //culling
 			{
 
 				LU.x = (LU.x * viewport[2]) + viewport[2] / 2;
@@ -353,7 +361,7 @@ struct UI
 	void drawRect(int x, int y, int w, int h, const sf::Color& color,sf::Text& text, sf::RenderTexture& texture)
 	{
 		sf::RectangleShape rectangle;
-		rectangle.setSize(sf::Vector2f(text.getGlobalBounds().width , text.getGlobalBounds().height));
+		rectangle.setSize(sf::Vector2f(400, 100));
 		rectangle.setFillColor(color);
 		rectangle.setOutlineColor(sf::Color::Black);
 		rectangle.setOutlineThickness(2);

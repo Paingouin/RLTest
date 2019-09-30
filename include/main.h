@@ -152,6 +152,64 @@ struct Map
 			}
 		}
 	}
+
+
+	void castLight(int row, float startX, float startY, float slopeStart, float slopeEnd, int radius)
+	{//NOTE : always start at row 1 at minimum
+
+		float newSlopeStart = 0.f;
+
+		if (slopeStart < slopeEnd)
+		{
+			return;
+		}
+
+		for (int distance = row; radius <= radius; ++distance)
+		{
+			int deltaY = -distance;
+			for (int deltaX = distance; deltaX <= 0; ++deltaX)
+			{
+				int currentX = startX + deltaX  + deltaY ;
+				int currentY = startY + deltaX  + deltaY ;
+
+				float leftSlope =  (deltaX - 0.5f) / (deltaY + 0.5f);
+				float rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
+
+				if (!(currentX >= 0 && currentY >= 0 && currentX < width && currentY < height) || slopeStart < rightSlope) {
+					continue;
+				}
+				else if (slopeEnd > leftSlope) {
+					break;
+				}
+
+				//check if it's within the lightable area and light if needed
+				/*if (rStrat.radius(deltaX, deltaY) <= radius) {
+					float bright = (float)(1 - (rStrat.radius(deltaX, deltaY) / radius));
+					lightMap[currentX][currentY] = bright;
+				}*/
+
+
+
+				//if (blocked) { //previous cell was a blocking one
+				//	if (resistanceMap[currentX][currentY] >= 1) {//hit a wall
+				//		newStart = rightSlope;
+				//		continue;
+				//	}
+				//	else {
+				//		blocked = false;
+				//		start = newStart;
+				//	}
+				//}
+				//else {
+				//	if (resistanceMap[currentX][currentY] >= 1 && distance < radius) {//hit a wall within sight line
+				//		blocked = true;
+				//		castLight(distance + 1, start, leftSlope);
+				//		newStart = rightSlope;
+				//	}
+
+			}
+		}
+	}
 };
 
 struct Glyph
