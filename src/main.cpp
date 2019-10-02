@@ -77,7 +77,7 @@ int main()
 	//windowTexture.create(gc.winWidth, gc.winHeight);
 
 	window.setActive(true);
-	double lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
+	float lastX = gc.winWidth / 2, lastY = gc.winHeight / 2;
 	bool firstMouse = true;
 
 	//window.setVerticalSyncEnabled(true);
@@ -100,7 +100,7 @@ int main()
 
 	//Load Texture ASCII
 	sf::Text fontTxt(fontText, font, 128);
-	double width = fontTxt.findCharacterPos(25).x - fontTxt.findCharacterPos(34).x;
+	float width = fontTxt.findCharacterPos(25).x - fontTxt.findCharacterPos(34).x;
 	//std::cout << std::string(fontText) <<  "\n" << width <<  "\n" << fontTxt.getCharacterSize() << std::endl;
 	fontTxt.setOutlineThickness(3);
 	fontTxt.setPosition(0, 0);

@@ -194,9 +194,14 @@ struct Camera
 		a[4] += a[0];
 
 
-		glyphs.coordinates.insert(glyphs.coordinates.end(), a, a + (sizeof(a) / sizeof(a[0])));
+	//	glyphs.coordinates.insert(glyphs.coordinates.end(), a, a + (sizeof(a) / sizeof(a[0])));//below seems to be faster when profiling...
+		glyphs.coordinates.emplace_back(a[0]);
+		glyphs.coordinates.emplace_back(a[1]);
+		glyphs.coordinates.emplace_back(a[2]);
+		glyphs.coordinates.emplace_back(a[3]);
+		glyphs.coordinates.emplace_back(a[4]);
 
-		glyphs.cells.push_back(&cell);
+		glyphs.cells.emplace_back(&cell);
 
 	}
 
