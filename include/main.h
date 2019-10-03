@@ -173,7 +173,7 @@ struct Map
 
 		at(11, 6).light = new LightSource;
 		at(11, 6).light->radius = 20;
-		at(11, 6).light->color = sf::Color(0, 30, 255);
+		at(11, 6).light->color = sf::Color(0, 29, 247);
 
 		at(10, 16).block = true;
 		at(10, 16).glyph = '#';
@@ -218,8 +218,7 @@ struct Map
 						float bright = 1.0f / (1.0 + 0.1 * lineDistance * 0.1 *lineDistance * lineDistance );
 						
 						at(currentX, currentY).colorToAdd = light;
-						if(at(currentX, currentY).lightLevel < bright)
-							at(currentX, currentY).lightLevel = bright;
+						at(currentX, currentY).lightLevel = bright;
 
 						if (at(currentX, currentY).ent != nullptr)
 						{
