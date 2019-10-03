@@ -215,7 +215,7 @@ struct Map
 				if (lineDistance <= radius) {
 					if (light != sf::Color::Black)
 					{
-						float bright = 1.0f / (1.0 + 0.1 * lineDistance * 0.1 *lineDistance * lineDistance );
+						float bright = 1.0f / (1.0 + 0.3 * lineDistance * 0.1 *lineDistance * lineDistance );
 						
 						at(currentX, currentY).colorToAdd = light;
 						at(currentX, currentY).lightLevel = bright;

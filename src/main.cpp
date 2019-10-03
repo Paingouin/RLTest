@@ -80,11 +80,11 @@ void calculateLight(Map& map, int startX, int startY, double radius, sf::Color c
 	{
 		if (cell.colorToAdd == sf::Color::Black  )
 			continue;
-		glm::vec3 col = { cell.colorToAdd.r, cell.colorToAdd.g, cell.colorToAdd.b };
-		glm::vec3 baseCol = { cell.baseColor.r, cell.baseColor.g, cell.baseColor.b };
+		glm::aligned_vec3 col = { cell.colorToAdd.r, cell.colorToAdd.g, cell.colorToAdd.b };
+		glm::aligned_vec3 baseCol = { cell.baseColor.r, cell.baseColor.g, cell.baseColor.b };
 
-		col = col * cell.lightLevel;
-		col = { (baseCol.x*2 + col.x) /2,(baseCol.y*2 + col.y)/2, (baseCol.z*2 + col.z)/2};
+		col = col ;
+		col = glm::mix(baseCol, col, cell.lightLevel);
 		if (cell.lightLevel != 1)
 			cell.baseColor = sf::Color(col.x, col.y, col.z);
 
@@ -184,7 +184,7 @@ int main()
 
 	player.light = new LightSource;
 	player.light->radius = 20;
-	player.light->color = sf::Color(247, 0, 0);
+	player.light->color = sf::Color(237, 210, 102);
 
 
 	map.at(3,3).ent = &player;
