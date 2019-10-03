@@ -86,7 +86,14 @@ struct GameConfig
 
 };
 
+
+
 //GAME
+struct LightSource
+{
+	float radius;
+	sf::Color color;
+};
 
 struct Entity
 {
@@ -94,6 +101,7 @@ struct Entity
 	float x, y, z;
 
 	sf::Color baseColor;
+	LightSource* light = nullptr;
 };
 
 
@@ -105,8 +113,12 @@ struct Cell
 	char glyph;
 	float x, y, z;
 
+	float lightLevel;
+	float lightLevelToAdd;
 	sf::Color baseColor;
+	sf::Color colorToAdd;
 	Entity* ent = nullptr;
+	LightSource* light = nullptr;
 
 };
 
@@ -147,66 +159,96 @@ struct Map
 				}
 				cell.x = x;
 				cell.y = y;
-				cell.baseColor = sf::Color(500 - x + y, 50 - x + y , 200, 255);
+				cell.baseColor = sf::Color::Black;
 				cells.push_back(cell);
 			}
 		}
+
+		at(6, 6).block = true;
+		at(6, 6).glyph = '#';
+		at(7, 6).block = true;
+		at(7, 6).glyph = '#';
+		at(10, 6).block = true;
+		at(10, 6).glyph = '#';
+
+		at(11, 6).light = new LightSource;
+		at(11, 6).light->radius = 20;
+		at(11, 6).light->color = sf::Color(245, 209, 147);
+
+		at(10, 16).block = true;
+		at(10, 16).glyph = '#';
+		at(10, 17).block = true;
+		at(10, 17).glyph = '#';
 	}
 
 
-	void castLight(int row, float startX, float startY, float slopeStart, float slopeEnd, int radius)
+	void castLight(int row, float startX, float startY, float startSlope, float endSlope, int xx, int xy, int yx, int yy, int radius, sf::Color light= sf::Color::Black)
 	{//NOTE : always start at row 1 at minimum
+		float newStartSlope = 0.f;
+		bool blocked = false;
 
-		float newSlopeStart = 0.f;
-
-		if (slopeStart < slopeEnd)
-		{
+		if (startSlope < endSlope) {
 			return;
 		}
 
-		for (int distance = row; radius <= radius; ++distance)
+		for(int distance = row ; distance <= radius && !blocked; ++distance)
 		{
 			int deltaY = -distance;
-			for (int deltaX = distance; deltaX <= 0; ++deltaX)
+			for (int deltaX = -distance ; deltaX <= 0 ; ++deltaX)
 			{
-				int currentX = startX + deltaX  + deltaY ;
-				int currentY = startY + deltaX  + deltaY ;
+				int currentX = startX + deltaX * xx + deltaY * xy;
+				int currentY = startY + deltaX * yx + deltaY * yy;
 
-				float leftSlope =  (deltaX - 0.5f) / (deltaY + 0.5f);
+				float leftSlope = (deltaX - 0.5f) / (deltaY + 0.5f);
 				float rightSlope = (deltaX + 0.5f) / (deltaY - 0.5f);
 
-				if (!(currentX >= 0 && currentY >= 0 && currentX < width && currentY < height) || slopeStart < rightSlope) {
+				if (!(currentX >= 0 && currentY >= 0 && currentX < width && currentY < height) || startSlope < rightSlope)
 					continue;
-				}
-				else if (slopeEnd > leftSlope) {
-					break;
-				}
+				 else if (endSlope > leftSlope) {
+					 break;
+				}	
 
+				glm::aligned_vec2 startPoint = { startX, startY };
+				glm::aligned_vec2 endPoint = { currentX, currentY };
+				float lineDistance = glm::distance(startPoint, endPoint);
 				//check if it's within the lightable area and light if needed
-				/*if (rStrat.radius(deltaX, deltaY) <= radius) {
-					float bright = (float)(1 - (rStrat.radius(deltaX, deltaY) / radius));
-					lightMap[currentX][currentY] = bright;
-				}*/
+				if (lineDistance <= radius) {
+					if (light != sf::Color::Black)
+					{
+						float bright = 1.0f / (1.0 + 0.1 * lineDistance * 0.1 *lineDistance * lineDistance );
+						
+						at(currentX, currentY).colorToAdd = light;
+						if(at(currentX, currentY).lightLevel < bright)
+							at(currentX, currentY).lightLevel = bright;
 
+						if (at(currentX, currentY).ent != nullptr)
+						{
+							at(currentX, currentY).ent->baseColor = light;
+						}
+					}
+					else
+					{
+						at(currentX, currentY).visible = true;
+					}	
+				}
 
-
-				//if (blocked) { //previous cell was a blocking one
-				//	if (resistanceMap[currentX][currentY] >= 1) {//hit a wall
-				//		newStart = rightSlope;
-				//		continue;
-				//	}
-				//	else {
-				//		blocked = false;
-				//		start = newStart;
-				//	}
-				//}
-				//else {
-				//	if (resistanceMap[currentX][currentY] >= 1 && distance < radius) {//hit a wall within sight line
-				//		blocked = true;
-				//		castLight(distance + 1, start, leftSlope);
-				//		newStart = rightSlope;
-				//	}
-
+				if (blocked) { //previous cell was a blocking one
+					if (at(currentX,currentY).block) {//hit a wall
+						newStartSlope = rightSlope;
+						continue;
+					}
+					else {
+						blocked = false;
+						startSlope = newStartSlope;
+					}
+				}
+				else {
+					if (at(currentX, currentY).block && distance < radius) {//hit a wall within sight line
+						blocked = true;
+						castLight(distance + 1, startX,startY, startSlope, leftSlope,xx, xy, yx, yy, radius, light);
+						newStartSlope = rightSlope;
+					}
+				}
 			}
 		}
 	}

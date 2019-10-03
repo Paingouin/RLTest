@@ -42,23 +42,52 @@ void calculateFOV(Map& map,  int startX, int startY, double radius)
 {
 	for (Cell& cell : map.cells)
 	{
-		cell.visible = true;
+		cell.visible = false;
 	}
 
-	//map.at(startX,startY).visible = true;
-	//
+	map.at(startX,startY).visible = true;
+	
 	////For each diagonals
-	//castLight(map, 1, startX , startY, 1.0f, 0.0f, 0, -1, 1, 0, radius);
-	//castLight(map, 1, startX, startY, 1.0f, 0.0f, -1, 0, 0, 1, radius);
-	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, 1, 0, radius);
-	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, 1, radius);
-	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, 1, -1, 0, radius);
-	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, -1, radius);
-	//castLight(map, 1, startX, startY, 1.0f, 0.0f, 0, -1, -1, 0, radius);
-	//castLight(map, 1, startX, startY, 1.0f, 0.0f,-1, 0, 0, -1, radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f, 0,-1, 1, 0,  radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f,-1, 0, 0, 1, radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f, 0, 1, 1, 0, radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, 1, radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f, 0, 1, -1, 0, radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f, 1, 0, 0, -1, radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f, 0, -1, -1, 0, radius);
+	map.castLight( 1, startX, startY, 1.0f, 0.0f,-1, 0, 0, -1, radius);
 	
 }
 
+void calculateLight(Map& map, int startX, int startY, double radius, sf::Color color)
+{
+	////For each diagonal
+	map.at(startX, startY).baseColor = color;
+	map.at(startX, startY).lightLevel = 1 ;
+
+
+	map.castLight(1, startX, startY, 1.0f, 0.0f, 0, -1, 1, 0, radius, color);
+	map.castLight(1, startX, startY, 1.0f, 0.0f, -1, 0, 0, 1, radius, color);
+	map.castLight(1, startX, startY, 1.0f, 0.0f, 0, 1, 1, 0, radius, color);
+	map.castLight(1, startX, startY, 1.0f, 0.0f, 1, 0, 0, 1, radius, color);
+	map.castLight(1, startX, startY, 1.0f, 0.0f, 0, 1, -1, 0, radius, color);
+	map.castLight(1, startX, startY, 1.0f, 0.0f, 1, 0, 0, -1, radius, color);
+	map.castLight(1, startX, startY, 1.0f, 0.0f, 0, -1, -1, 0, radius, color);
+	map.castLight(1, startX, startY, 1.0f, 0.0f, -1, 0, 0, -1, radius, color);
+
+
+	for (Cell& cell : map.cells)
+	{
+		if (cell.colorToAdd == sf::Color::Black)
+			continue;
+		glm::vec3 col = { cell.colorToAdd.r, cell.colorToAdd.g, cell.colorToAdd.b };
+		glm::vec3 baseCol = { cell.baseColor.r, cell.baseColor.g, cell.baseColor.b };
+		col = col * cell.lightLevel;
+		col = { (baseCol.x + col.x) /2 ,(baseCol.y + col.y) /2 , (baseCol.z + col.z) /2 };
+		cell.baseColor = sf::Color(col.x, col.y, col.z);
+
+	}
+}
 
 int main()
 {
@@ -149,6 +178,11 @@ int main()
 		,0.f
 		,sf::Color(255, 255, 255, 255)
 	};
+
+	player.light = new LightSource;
+	player.light->radius = 20;
+	player.light->color = sf::Color(245, 209, 147);
+
 
 	map.at(3,3).ent = &player;
 
@@ -295,8 +329,35 @@ int main()
 		camera.updateCameraVectors(targetDeplacement);
 
 		//DO FOV
-		calculateFOV(map, player.x, player.y, 10);
+		calculateFOV(map, player.x, player.y, 20);
 		//DO LIGHT
+		for (Cell& cell : map.cells)
+		{
+
+			if (cell.light != nullptr)
+			{
+				cell.baseColor = cell.light->color;
+			}
+			else 
+				cell.baseColor = sf::Color::Black;
+			cell.colorToAdd = sf::Color::Black;
+			cell.lightLevel = 0;
+		}
+
+
+		for (Cell& cell : map.cells)
+		{
+			if (cell.light != nullptr)
+			{
+				calculateLight(map, cell.x, cell.y, cell.light->radius, cell.light->color);
+			}
+		}
+
+
+		if (player.light != nullptr)
+			calculateLight(map, player.x, player.y, player.light->radius, player.light->color);
+
+		//END LIGHT
 
 
 		while (timer.doUpdate());
@@ -325,7 +386,7 @@ int main()
 
 		windowTexture.draw(camera.m_vertices, &asciiTexture.getTexture());  //Draw all the ascii sprites
 
-		sf::VertexArray lines(sf::LinesStrip, 2);
+		/*sf::VertexArray lines(sf::LinesStrip, 2);
 		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
 		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
@@ -333,7 +394,7 @@ int main()
 
 		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
 		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
-		windowTexture.draw(lines);
+		windowTexture.draw(lines);*/
 
 
 
