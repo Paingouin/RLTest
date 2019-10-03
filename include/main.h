@@ -124,7 +124,7 @@ struct Cell
 
 struct Map
 {
-	int width, height;
+	unsigned int width, height;
 	std::vector<Cell> cells;
 
 	inline Cell& at(int x, int y)
@@ -133,7 +133,7 @@ struct Map
 		else if (x >= width) x = width-1;
 		if (y < 0) y = 0;
 		else if (y >= height) y = height - 1;
-		return cells[x + y * width];
+		return cells[x + (y * width)];
 	}
 	
 	void genRectangleRoom(int sizeX, int sizeY)
@@ -173,7 +173,7 @@ struct Map
 
 		at(11, 6).light = new LightSource;
 		at(11, 6).light->radius = 20;
-		at(11, 6).light->color = sf::Color(245, 209, 147);
+		at(11, 6).light->color = sf::Color(0, 30, 255);
 
 		at(10, 16).block = true;
 		at(10, 16).glyph = '#';

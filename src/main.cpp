@@ -181,7 +181,7 @@ int main()
 
 	player.light = new LightSource;
 	player.light->radius = 20;
-	player.light->color = sf::Color(245, 209, 147);
+	player.light->color = sf::Color(247, 0, 0);
 
 
 	map.at(3,3).ent = &player;
