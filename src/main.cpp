@@ -78,13 +78,16 @@ void calculateLight(Map& map, int startX, int startY, double radius, sf::Color c
 
 	for (Cell& cell : map.cells)
 	{
-		if (cell.colorToAdd == sf::Color::Black)
+		if (cell.colorToAdd == sf::Color::Black  )
 			continue;
 		glm::vec3 col = { cell.colorToAdd.r, cell.colorToAdd.g, cell.colorToAdd.b };
 		glm::vec3 baseCol = { cell.baseColor.r, cell.baseColor.g, cell.baseColor.b };
+
 		col = col * cell.lightLevel;
-		col = { (baseCol.x + col.x) ,(baseCol.y + col.y), (baseCol.z + col.z)};
-		cell.baseColor = sf::Color(col.x, col.y, col.z);
+		col = { (baseCol.x*2 + col.x) /2,(baseCol.y*2 + col.y)/2, (baseCol.z*2 + col.z)/2};
+		if (cell.lightLevel != 1)
+			cell.baseColor = sf::Color(col.x, col.y, col.z);
+
 		cell.colorToAdd = sf::Color::Black;
 	}
 }
