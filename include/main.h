@@ -129,10 +129,6 @@ struct Map
 
 	inline Cell& at(int x, int y)
 	{
-		if (x < 0) x = 0;
-		else if (x >= width) x = width-1;
-		if (y < 0) y = 0;
-		else if (y >= height) y = height - 1;
 		return cells[x + (y * width)];
 	}
 	
@@ -173,7 +169,11 @@ struct Map
 
 		at(11, 6).light = new LightSource;
 		at(11, 6).light->radius = 20;
-		at(11, 6).light->color = sf::Color(237, 210, 102);
+		at(11, 6).light->color = sf::Color(243, 204, 252);
+
+		at(11, 19).light = new LightSource;
+		at(11, 19).light->radius = 20;
+		at(11, 19).light->color = sf::Color(204, 252, 250);
 
 		at(10, 16).block = true;
 		at(10, 16).glyph = '#';
