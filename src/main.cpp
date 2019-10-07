@@ -159,7 +159,7 @@ int main()
 		return -1;
 	}
 
-	// Load shaders
+	// Load shaders"'
 	sf::Shader postEffect;
 	if (!postEffect.loadFromFile(POST_SHADER_FILENAME, sf::Shader::Fragment))
 	{
@@ -187,7 +187,7 @@ int main()
 	};
 
 	player.light = new LightSource;
-	player.light->radius = 20;
+	player.light->radius = 8;
 	player.light->color = sf::Color(242, 204, 133);
 
 
@@ -228,30 +228,31 @@ int main()
 				window.close();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
+				
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch+180)));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch+180)));
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch+180)));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch+180)));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch )));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch )));
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch )));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch )));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 
@@ -310,7 +311,7 @@ int main()
 			}
 		}
 
-		player.z = map.at(player.x, player.y).z;
+		player.z = map.at(player.x, player.y).z +0.3;
 		
 		if (firstCam)
 		{
@@ -325,9 +326,6 @@ int main()
 			
 			target = { player.x , player.y , player.z };	
 		}
-
-		map.at(player.x, player.y).ent = &player;
-
 
 		//wheighted avarege : v = ((v * (N - 1)) + w) / N; fast at start but decrease 
 		camera.Position = ((camera.Position * (17.f -1.f)) + target) / 17.f;
@@ -370,7 +368,7 @@ int main()
 		window.clear(sf::Color::Black);
 		windowTexture.clear(sf::Color::Black);
 
-		std::vector<Glyph> glyphs = camera.to_global(map.cells);
+		std::vector<Glyph> glyphs = camera.to_global(map.cells, player.z);
 		
 		//Z-sorting
 		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.orig.z > b.orig.z; });

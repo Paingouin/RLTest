@@ -86,8 +86,6 @@ struct GameConfig
 
 };
 
-
-
 //GAME
 struct LightSource
 {
@@ -103,7 +101,6 @@ struct Entity
 	sf::Color baseColor;
 	LightSource* light = nullptr;
 };
-
 
 struct Cell
 {
@@ -131,6 +128,19 @@ struct Map
 	{
 		return cells[x + (y * width)];
 	}
+
+	void moveEntity(Entity& ent, int deltaX, int deltaY)
+	{
+		int moveX = ent.x + deltaX;
+		int moveY = ent.y + deltaY;
+		if (moveX >= 0 && moveX < width && moveY >= 0 && moveY < height)
+		{
+			at(moveX, moveY).ent = &ent;
+			at(ent.x, ent.y).ent = nullptr;
+			ent.x = moveX;
+			ent.y = moveY;
+		}
+	}
 	
 	void genRectangleRoom(int sizeX, int sizeY)
 	{
@@ -151,7 +161,7 @@ struct Map
 				else
 				{
 					cell.glyph = '+';// y+48;
-					cell.z = 0;//(x >= 3)? (x -3.f)*0.1 : 0.f;
+					cell.z = (x >= 3 && y <=3)? (x -3.f)*0.1 : 0.f;
 				}
 				cell.x = x;
 				cell.y = y;
@@ -168,21 +178,21 @@ struct Map
 		at(10, 6).glyph = '#';
 
 		at(11, 6).light = new LightSource;
-		at(11, 6).light->radius = 20;
+		at(11, 6).light->radius = 8;
 		at(11, 6).light->color = sf::Color(243, 204, 252);
 
 		at(11, 19).light = new LightSource;
-		at(11, 19).light->radius = 20;
+		at(11, 19).light->radius = 8;
 		at(11, 19).light->color = sf::Color(204, 252, 250);
 
 		at(10, 16).block = true;
 		at(10, 16).glyph = '#';
-		at(10, 17).block = true;
-		at(10, 17).glyph = '#';
+		at(10, 18).block = true;
+		at(10, 18).glyph = '#';
 	}
 
 
-	void castLight(int row, float startX, float startY, float startSlope, float endSlope, int xx, int xy, int yx, int yy, int radius, sf::Color light= sf::Color::Black)
+void castLight(int row, float startX, float startY, float startSlope, float endSlope, int xx, int xy, int yx, int yy, int radius, sf::Color light= sf::Color::Black)
 	{//NOTE : always start at row 1 at minimum
 		float newStartSlope = 0.f;
 		bool blocked = false;
@@ -215,8 +225,14 @@ struct Map
 				if (lineDistance <= radius) {
 					if (light != sf::Color::Black)
 					{
-						float bright = 1.0f / (1.0 + 0.3 * lineDistance * 0.1 *lineDistance * lineDistance );
-						
+						//Multiple light attenuation!  https://gamedev.stackexchange.com/questions/56897/glsl-light-attenuation-color-and-intensity-formula
+						//clamp(1.0 - dist/radius, 0.0, 1.0); att *= att
+						//1.0 / (radius*radius * minLight)
+						//att = 1.0 / (1.0 + 0.1*dist + 0.01*dist*dist)
+
+						float   bright = glm::clamp(1.0 - (lineDistance * lineDistance) / (radius * radius), 0.0, 1.0);
+						bright *= bright;
+
 						at(currentX, currentY).colorToAdd = light;
 						at(currentX, currentY).lightLevel = bright;
 
@@ -265,5 +281,6 @@ struct Glyph
 struct Glyphs
 {
 	std::vector<glm::aligned_vec4> coordinates; //pos, LU ,RU, RB, LB
+	std::vector<float> lightCorrection;
 	std::vector<Cell*> cells;
 };
