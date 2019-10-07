@@ -128,6 +128,19 @@ struct Map
 	{
 		return cells[x + (y * width)];
 	}
+
+	void moveEntity(Entity& ent, int deltaX, int deltaY)
+	{
+		int moveX = ent.x + deltaX;
+		int moveY = ent.y + deltaY;
+		if (moveX >= 0 && moveX < width && moveY >= 0 && moveY < height)
+		{
+			at(moveX, moveY).ent = &ent;
+			at(ent.x, ent.y).ent = nullptr;
+			ent.x = moveX;
+			ent.y = moveY;
+		}
+	}
 	
 	void genRectangleRoom(int sizeX, int sizeY)
 	{
@@ -165,11 +178,11 @@ struct Map
 		at(10, 6).glyph = '#';
 
 		at(11, 6).light = new LightSource;
-		at(11, 6).light->radius = 20;
+		at(11, 6).light->radius = 6;
 		at(11, 6).light->color = sf::Color(243, 204, 252);
 
 		at(11, 19).light = new LightSource;
-		at(11, 19).light->radius = 20;
+		at(11, 19).light->radius = 6;
 		at(11, 19).light->color = sf::Color(204, 252, 250);
 
 		at(10, 16).block = true;
@@ -217,7 +230,7 @@ void castLight(int row, float startX, float startY, float startSlope, float endS
 						//1.0 / (radius*radius * minLight)
 						//att = 1.0 / (1.0 + 0.1*dist + 0.01*dist*dist)
 
-						float   bright = glm::clamp(1.0 - (lineDistance * lineDistance) / (8.0 * 8.0), 0.0, 1.0);
+						float   bright = glm::clamp(1.0 - (lineDistance * lineDistance) / (radius * radius), 0.0, 1.0);
 						bright *= bright;
 
 						at(currentX, currentY).colorToAdd = light;

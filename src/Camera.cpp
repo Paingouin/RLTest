@@ -205,7 +205,7 @@ struct Camera
 
 		float delta = glm::abs(orig.z - playerHeight);
 
-		glyphs.lightCorrection.emplace_back(glm::clamp(1.0 - (delta * delta) / (3.0 * 3.0), 0.0, 1.0)  );
+		glyphs.lightCorrection.emplace_back(glm::clamp(1.0 - (delta * delta) / (2.0 * 2.0), 0.0, 1.0)  );
 
 	}
 

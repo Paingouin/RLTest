@@ -142,7 +142,7 @@ int main()
 	fontTxt.setPosition(0, 0);
 
 	sf::RenderTexture asciiTexture;
-	asciiTexture.create(128*100, 138);//NOTE : Disable this to see the sprites
+	//asciiTexture.create(128*100, 138);//NOTE : Disable this to see the sprites
 	asciiTexture.setSmooth(true);
 	asciiTexture.draw(fontTxt);
 	asciiTexture.display();
@@ -187,7 +187,7 @@ int main()
 	};
 
 	player.light = new LightSource;
-	player.light->radius = 20;
+	player.light->radius = 7;
 	player.light->color = sf::Color(242, 204, 133);
 
 
@@ -228,30 +228,31 @@ int main()
 				window.close();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
+				
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch+180)));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch+180)));
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch+180)));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch+180)));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
 			{
-				map.at(player.x, player.y).ent = nullptr;
-				player.y += glm::round(glm::sin(glm::radians(camera.Pitch )));
-				player.x += glm::round(glm::cos(glm::radians(camera.Pitch )));
+				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch )));
+				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch )));
+				map.moveEntity(player, deltaX, deltaY);
 				moved = true;
 			}
 
@@ -310,7 +311,7 @@ int main()
 			}
 		}
 
-		player.z = map.at(player.x, player.y).z;
+		player.z = map.at(player.x, player.y).z +0.3;
 		
 		if (firstCam)
 		{
@@ -325,9 +326,6 @@ int main()
 			
 			target = { player.x , player.y , player.z };	
 		}
-
-		map.at(player.x, player.y).ent = &player;
-
 
 		//wheighted avarege : v = ((v * (N - 1)) + w) / N; fast at start but decrease 
 		camera.Position = ((camera.Position * (17.f -1.f)) + target) / 17.f;
