@@ -162,9 +162,9 @@ struct Camera
 			
 		glm::aligned_vec4 a[5];
 		a[0] = mModelView * orig * 1.7f;  //POS : center
-		a[1] = { -0.5,     0.5, a[0].z ,1.f }; //LU
+		a[1] = { -0.5,    0.5, a[0].z ,1.f }; //LU
 		a[2] = { 0.5,     0.5, a[0].z ,1.f }; //RU
-		a[3] = { 0.5,   -0.5, a[0].z ,1.f };  //RB
+		a[3] = { 0.5,    -0.5, a[0].z ,1.f }; //RB
 		a[4] = { -0.5,   -0.5, a[0].z ,1.f }; //LB
 
 		if (cell.ent  == nullptr)
