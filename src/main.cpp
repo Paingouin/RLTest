@@ -142,7 +142,7 @@ int main()
 	fontTxt.setPosition(0, 0);
 
 	sf::RenderTexture asciiTexture;
-	//asciiTexture.create(128*100, 138);//NOTE : Disable this to see the sprites
+	asciiTexture.create(128*100, 138);//NOTE : Disable this to see the sprites
 	asciiTexture.setSmooth(true);
 	asciiTexture.draw(fontTxt);
 	asciiTexture.display();
@@ -159,7 +159,7 @@ int main()
 		return -1;
 	}
 
-	// Load shaders
+	// Load shaders"'
 	sf::Shader postEffect;
 	if (!postEffect.loadFromFile(POST_SHADER_FILENAME, sf::Shader::Fragment))
 	{
@@ -187,7 +187,7 @@ int main()
 	};
 
 	player.light = new LightSource;
-	player.light->radius = 7;
+	player.light->radius = 8;
 	player.light->color = sf::Color(242, 204, 133);
 
 

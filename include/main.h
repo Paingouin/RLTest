@@ -178,17 +178,17 @@ struct Map
 		at(10, 6).glyph = '#';
 
 		at(11, 6).light = new LightSource;
-		at(11, 6).light->radius = 6;
+		at(11, 6).light->radius = 8;
 		at(11, 6).light->color = sf::Color(243, 204, 252);
 
 		at(11, 19).light = new LightSource;
-		at(11, 19).light->radius = 6;
+		at(11, 19).light->radius = 8;
 		at(11, 19).light->color = sf::Color(204, 252, 250);
 
 		at(10, 16).block = true;
 		at(10, 16).glyph = '#';
-		at(10, 17).block = true;
-		at(10, 17).glyph = '#';
+		at(10, 18).block = true;
+		at(10, 18).glyph = '#';
 	}
 
 
