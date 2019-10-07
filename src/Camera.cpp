@@ -148,7 +148,7 @@ struct Camera
 			Zoom = 90.0f;
 	}
 
-	void  __fastcall spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f)
+	void  __fastcall spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f , float playerHeight =0.0f)
 	{
 		glm::aligned_vec4 orig;
 		if (cell.ent == nullptr)
@@ -203,11 +203,15 @@ struct Camera
 
 		glyphs.cells.emplace_back(&cell);
 
+		float delta = glm::abs(orig.z - playerHeight);
+
+		glyphs.lightCorrection.emplace_back(glm::clamp(1.0 - (delta * delta) / (3.0 * 3.0), 0.0, 1.0)  );
+
 	}
 
 
 	//Calculate Global position of all cells to the screen based of camera
-	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells)
+	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells , float playerHeight)
 	{
 		Glyphs glyphs;
 		glyphs.coordinates.reserve(cells.size() * 12);
@@ -221,15 +225,14 @@ struct Camera
 		{
 			if (cell.visible == true)
 			{
-				spriteFromCell(glyphs, cell);
+				spriteFromCell(glyphs, cell, 0.0f, playerHeight);
 				if (cell.glyph == '#' && cell.ent == nullptr)
 				{
-					spriteFromCell(glyphs, cell,0.4f);
-					spriteFromCell(glyphs, cell,0.8f);
+					spriteFromCell(glyphs, cell,0.4f , playerHeight);
+					spriteFromCell(glyphs, cell,0.8f , playerHeight);
 				}
 			}
 		}
-
 
 		for (glm::aligned_vec4& point : glyphs.coordinates)
 		{
@@ -313,6 +316,10 @@ struct Camera
 				quad4.texCoords = sf::Vector2f((lettre - 31) * 128, 138);
 
 				sf::Color color = (glyphs.cells[cellCount]->ent != nullptr) ? glyphs.cells[cellCount]->ent->baseColor : glyphs.cells[cellCount]->baseColor ;
+				//Thanks a lot KUKURU3
+				color.r = color.r * glyphs.lightCorrection[cellCount];
+				color.g = color.g * glyphs.lightCorrection[cellCount];
+				color.b = color.b * glyphs.lightCorrection[cellCount];
 				quad1.color = color;
 				quad2.color = color;
 				quad3.color = color;

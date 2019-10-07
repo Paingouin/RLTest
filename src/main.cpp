@@ -370,7 +370,7 @@ int main()
 		window.clear(sf::Color::Black);
 		windowTexture.clear(sf::Color::Black);
 
-		std::vector<Glyph> glyphs = camera.to_global(map.cells);
+		std::vector<Glyph> glyphs = camera.to_global(map.cells, player.z);
 		
 		//Z-sorting
 		std::sort(glyphs.begin(), glyphs.end(),	[](const Glyph& a, const Glyph& b) {return a.orig.z > b.orig.z; });
