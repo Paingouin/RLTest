@@ -20,9 +20,8 @@ Plateform must receive only map(pos+color + state of effects) and send controlle
 
 
 //TODO :
-//		FOV
-//		Light
-//      
+//		ECS
+//			=> joueur : Deplacement + position
 //		Shader
 //
 //		Basic dungeon generation/basic 
@@ -226,35 +225,7 @@ int main()
 			// "close requested" event: we close the window
 			if (event.type == sf::Event::Closed)
 				window.close();
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-			{
-				
-				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
-				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
-				map.moveEntity(player, deltaX, deltaY);
-				moved = true;
-			}
-			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-			{
-				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
-				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
-				map.moveEntity(player, deltaX, deltaY);
-				moved = true;
-			}
-			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-			{
-				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch+180)));
-				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch+180)));
-				map.moveEntity(player, deltaX, deltaY);
-				moved = true;
-			}
-			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-			{
-				int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch )));
-				int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch )));
-				map.moveEntity(player, deltaX, deltaY);
-				moved = true;
-			}
+			
 
 			if (event.type == sf::Event::MouseButtonPressed)
 			{
@@ -273,16 +244,56 @@ int main()
 				}
 			}
 
-			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+			if (event.type == sf::Event::KeyPressed)
 			{
 
+				if (event.key.code == sf::Keyboard::Left)
+				{
+
+					int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 270)));
+					int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 270)));
+					map.moveEntity(player, deltaX, deltaY);
+					moved = true;
+				}
+				else if (event.key.code == sf::Keyboard::Right)
+				{
+					int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 90)));
+					int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 90)));
+					map.moveEntity(player, deltaX, deltaY);
+					moved = true;
+				}
+				else if (event.key.code == sf::Keyboard::Up)
+				{
+					int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch + 180)));
+					int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch + 180)));
+					map.moveEntity(player, deltaX, deltaY);
+					moved = true;
+				}
+				else if (event.key.code == sf::Keyboard::Down)
+				{
+					int deltaY = glm::round(glm::sin(glm::radians(camera.Pitch)));
+					int deltaX = glm::round(glm::cos(glm::radians(camera.Pitch)));
+					map.moveEntity(player, deltaX, deltaY);
+					moved = true;
+				}
+			}
+
+			if (event.type == sf::Event::KeyReleased)
+			{
+				if (event.key.code == sf::Keyboard::LControl)
+				{
+					firstMouse = true;
+				}
+			}
+
+			if (event.type == sf::Event::MouseMoved && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+			{
 				if (firstMouse)
 				{
 					lastX = event.mouseMove.x;
 					lastY = event.mouseMove.y;
 					firstMouse = false;
 				}
-
 				double xoffset = event.mouseMove.x - lastX;
 				double yoffset = lastY - event.mouseMove.y; // reversed since y-coordinates go from bottom to top
 

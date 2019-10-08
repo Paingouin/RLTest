@@ -50,7 +50,7 @@ private:
     template <typename T>
     std::shared_ptr<Pool<T>> accommodateEvent();
 
-    std::unordered_map<std::type_index, std::shared_ptr<BasePool>> eventPools;
+    std::unordered_map<std::type_index, std::shared_ptr<AbstractPool>> eventPools;
 
     World &world;
 };

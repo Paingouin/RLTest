@@ -158,7 +158,7 @@ private:
 
     // vector of component pools, each pool contains all the data for a certain component type
     // vector index = component id, pool index = entity id
-    std::vector<std::shared_ptr<BasePool>> componentPools;
+    std::vector<std::shared_ptr<AbstractPool>> componentPools;
 
     // vector of component masks, each mask lets us know which components are turned "on" for a specific entity
     // vector index = entity id, each bit set to 1 means that the entity has that component
