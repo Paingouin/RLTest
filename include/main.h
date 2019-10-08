@@ -25,6 +25,8 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtc/type_aligned.hpp"
 
+#include "Mix/World.h"
+
 
 #define POST_SHADER_FILENAME         "./Shaders/post.frag"
 #define FONT_FILENAME			     "./Fonts/square.ttf"
@@ -73,6 +75,16 @@ stbi_image_free(imgData);
 
 /*-------------------------------------------------------------------------------------------------------------------------*/
 
+
+enum
+{
+	MAX_COMPONENTS = 64,
+	INDEX_BITS = 24,
+	VERSION_BITS = 8,
+	MINIMUM_FREE_IDS = 1024,
+	DEFAULT_POOL_SIZE = 100
+};
+
 struct GameConfig
 {
 	const float YAW = -90.0f;
@@ -87,6 +99,36 @@ struct GameConfig
 };
 
 //GAME
+
+struct PositionComponent
+{
+	PositionComponent(float x = 0, float y = 0 , float z = 0) : x(x), y(y), z(z) {}
+	float x, y, z;
+};
+
+
+class MoveSystem : public Mix::System
+{
+public:
+	MoveSystem()
+	{
+		// which components an entity must have for the system to be interested
+		requireComponent<PositionComponent>();
+		//requireComponent<VelocityComponent>();
+	}
+
+	void update()
+	{
+		// do stuff with all the entities of interest
+		for (auto e : getEntities()) {
+			auto& position = e.getComponent<PositionComponent>();
+		//	const auto& velocity = e.getComponent<VelocityComponent>();
+		//	position.x += velocity.x;
+		//	position.y += velocity.y;
+		}
+	}
+};
+
 struct LightSource
 {
 	float radius;

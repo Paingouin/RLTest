@@ -21,8 +21,7 @@ project(RLTest)
 
 set (SOURCE_FILE 	        
 			./include/main.h
-			./include/stb_image.h
-			./ressources/Shaders/post.frag
+			#./include/stb_image.h
 
 			./src/Camera.cpp
 			./src/timestep.cpp
