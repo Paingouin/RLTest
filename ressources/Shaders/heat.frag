@@ -1,11 +1,11 @@
-uniform sampler2D texture;
+uniform sampler2D backGround;
 uniform vec3 iResolution;
 uniform float iTime;
 
 //gl_Color is send by the vertexBuffer
 void main()
 {
-  // Sawtooth calc of time
+     // Sawtooth calc of time
     float offset = (iTime - floor(iTime)) / iTime;
 	float time = iTime * offset;
 
@@ -13,17 +13,16 @@ void main()
 	vec3 waveParams = vec3(10.0, 0.8, 0.1 );
     
     // Find coordinate, flexible to different resolutions
-    float maxSize = max(iResolution.x, iResolution.y);
-    vec2 uv = gl_FragCoord.xy / 200;
+    vec2 uv = gl_TexCoord[0].xy / iResolution.xy;
     
     // Find center, flexible to different resolutions
-    vec2 center = iResolution.xy / maxSize / 2.;
+    vec2 center = iResolution.xy  / iResolution.x / 2.;
 
     // Distance to the center
     float dist = distance(uv, center);
     
     // Original color
-	vec4 c = texture(texture, uv);
+	vec4 c = texture(backGround, uv);
     
     // Limit to waves
 	if (time > 0. && dist <= time + waveParams.z && dist >= time - waveParams.z) {
@@ -39,10 +38,11 @@ void main()
 		uv += ((dir * diffTime) / (time * dist * 80.0));
         
         // Grab color for the new coord
-		c = texture(texture, uv);
+		c = texture(backGround, uv);
 
         // Optionally: Blow out the color for brighter-energy origin
         //c += (c * diffPow) / (time * dist * 40.0);
 	}
+   
     gl_FragColor = c;
 }

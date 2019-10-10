@@ -162,14 +162,14 @@ int main()
 	sf::Shader postEffect;
 	if (!postEffect.loadFromFile(POST_SHADER_FILENAME, sf::Shader::Fragment))
 	{
-		std::cerr << "Error while loading shaders" << std::endl;
+		std::cerr << "Error while loading shaders" << POST_SHADER_FILENAME << std::endl;
 		return -1;
 	}
 
 	sf::Shader heatEffect;
 	if (!heatEffect.loadFromFile(HEAT_SHADER_FILENAME, sf::Shader::Fragment))
 	{
-		std::cerr << "Error while loading shaders" << std::endl;
+		std::cerr << "Error while loading shaders" << HEAT_SHADER_FILENAME << std::endl;
 		return -1;
 	}
 
@@ -429,19 +429,30 @@ int main()
 
 		ui.finish();
 
+
+		sf::VertexArray quad;
+		quad.setPrimitiveType(sf::Quads);
+		quad.resize(4);
+
+		quad[0].position = sf::Vector2f(gc.winWidth / 2 - 200, gc.winHeight / 2 - 200);
+		quad[1].position = sf::Vector2f(gc.winWidth / 2 + 200, gc.winHeight / 2 - 200);
+		quad[2].position = sf::Vector2f(gc.winWidth / 2 + 200, gc.winHeight / 2 + 200);
+		quad[3].position = sf::Vector2f(gc.winWidth / 2 - 200, gc.winHeight / 2 + 200);
+
+		quad[0].texCoords = sf::Vector2f(gc.winWidth / 2 - 200, gc.winHeight / 2 - 200);
+		quad[1].texCoords = sf::Vector2f(gc.winWidth / 2 + 200, gc.winHeight / 2 - 200);
+		quad[2].texCoords = sf::Vector2f(gc.winWidth / 2 + 200, gc.winHeight / 2 + 200);
+		quad[3].texCoords = sf::Vector2f(gc.winWidth / 2 - 200, gc.winHeight / 2 + 200);
+
 		sf::Texture text2(windowTexture.getTexture());
-		heatEffect.setUniform("texture",text2);
+		heatEffect.setUniform("backGround", text2);
 		heatEffect.setUniform("iTime", timer.time.getElapsedTime().asSeconds());
-		heatEffect.setUniform("iResolution", sf::Vector3f(text2.getSize().x, text2.getSize().y, 0));
+		heatEffect.setUniform("iResolution", sf::Vector3f(text2.getSize().x, text2.getSize().y, 1));
 		sf::RenderStates states;
 
 		states.shader = &heatEffect;
 
-		sf::RectangleShape rectangle;
-		rectangle.setSize(sf::Vector2f(400, 400));
-		rectangle.setPosition(gc.winWidth / 2 - 200, gc.winHeight / 2 - 200);
-
-		windowTexture.draw(rectangle, states);
+		windowTexture.draw(quad, states);
 
 		//sf::Sprite sprite(asciiTexture.getTexture());
 
