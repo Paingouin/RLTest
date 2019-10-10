@@ -166,6 +166,13 @@ int main()
 		return -1;
 	}
 
+	sf::Shader heatEffect;
+	if (!heatEffect.loadFromFile(HEAT_SHADER_FILENAME, sf::Shader::Fragment))
+	{
+		std::cerr << "Error while loading shaders" << std::endl;
+		return -1;
+	}
+
 	//UI (and controls? )
 	UI ui = {};
 
@@ -417,21 +424,36 @@ int main()
 					+ "\nNb Sprites : " + std::to_string(glyphs.size())
 					+ "\nPos Player X:" + std::to_string((int)player.x) + " Y:" + std::to_string((int)player.y)
 					, font, 16);
-		ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mouseDown * 8) ), fpsTxt, windowTexture);
+		
+		ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mouseDown * 8) ), fpsTxt, windowTexture, heatEffect, timer.time.getElapsedTime().asSeconds());
 
 		ui.finish();
 
+		sf::Texture text2(windowTexture.getTexture());
+		heatEffect.setUniform("texture",text2);
+		heatEffect.setUniform("iTime", timer.time.getElapsedTime().asSeconds());
+		heatEffect.setUniform("iResolution", sf::Vector3f(text2.getSize().x, text2.getSize().y, 0));
+		sf::RenderStates states;
+
+		states.shader = &heatEffect;
+
+		sf::RectangleShape rectangle;
+		rectangle.setSize(sf::Vector2f(400, 400));
+		rectangle.setPosition(gc.winWidth / 2 - 200, gc.winHeight / 2 - 200);
+
+		windowTexture.draw(rectangle, states);
 
 		//sf::Sprite sprite(asciiTexture.getTexture());
 
 		//windowTexture.draw(sprite);
+		sf::Sprite endWindow(windowTexture.getTexture());
+
 		windowTexture.display();
 		
 		//draw to windows
-		sf::Sprite endWindow(windowTexture.getTexture());
+
 		postEffect.setUniform("texture", sf::Shader::CurrentTexture);
 		window.draw(endWindow,&postEffect);
-
 		window.display();
 
 

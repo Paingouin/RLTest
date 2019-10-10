@@ -9,7 +9,6 @@
 
 #include <SFML/Graphics.hpp>
 
-
 #define GLM_FORCE_INTRINSICS
 #define GLM_FORCE_INLINE
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -29,6 +28,7 @@
 
 
 #define POST_SHADER_FILENAME         "./Shaders/post.frag"
+#define HEAT_SHADER_FILENAME         "./Shaders/heat.frag"
 #define FONT_FILENAME			     "./Fonts/square.ttf"
 
 
@@ -74,16 +74,6 @@ stbi_image_free(imgData);
 #define COLOR_FROM_RGBA(r, g, b, a) ((r << 24) | (g << 16) | (b << 8) | a)
 
 /*-------------------------------------------------------------------------------------------------------------------------*/
-
-
-enum
-{
-	MAX_COMPONENTS = 64,
-	INDEX_BITS = 24,
-	VERSION_BITS = 8,
-	MINIMUM_FREE_IDS = 1024,
-	DEFAULT_POOL_SIZE = 100
-};
 
 struct GameConfig
 {
@@ -315,8 +305,9 @@ struct Glyph
 {
 	sf::Vertex vertices[4]; //pos, LU ,RU, RB, LB
 	Cell* cell;
-
 	glm::aligned_vec4 orig;
+
+	//Shader (link to shader 
 };
 
 

@@ -45,6 +45,9 @@ struct Camera
 	void updateCameraVectors(glm::aligned_vec3 target)
 	{
 		// Calculate the new position of the camera
+		//s and c used to rotate the entities based en camera pitch
+		s = glm::sin(glm::radians(Pitch));
+		c = glm::cos(glm::radians(Pitch));
 		
 		posOffset.x = Zoom * sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
 		posOffset.y = Zoom * sin(glm::radians(Pitch)) * sin(glm::radians(Yaw));
@@ -108,9 +111,6 @@ struct Camera
 
 		mTotal = mProjection * mView  * mModel;
 		mModelView = mView * mModel; //now we can use the camera View space (so in2d from the camera)
-
-		s = glm::sin(glm::radians(Pitch));
-		c = glm::cos(glm::radians(Pitch));
 	}
 
 	// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -167,6 +167,7 @@ struct Camera
 		a[3] = { 0.5,    -0.5, a[0].z ,1.f }; //RB
 		a[4] = { -0.5,   -0.5, a[0].z ,1.f }; //LB
 
+		//Don't rotate entities
 		if (cell.ent  == nullptr)
 		{
 			float tmpX = a[1].x;
@@ -370,7 +371,7 @@ struct UI
 				activeItem = -1; 
 		}
 	}
-	void drawRect(int x, int y, int w, int h, const sf::Color& color,sf::Text& text, sf::RenderTexture& texture)
+	void drawRect(int x, int y, int w, int h, const sf::Color& color,sf::Text& text, sf::RenderTexture& texture, sf::Shader& effect, float time)
 	{
 		sf::RectangleShape rectangle;
 		rectangle.setSize(sf::Vector2f(400, 100));
