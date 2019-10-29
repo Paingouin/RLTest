@@ -316,7 +316,7 @@ struct Camera
 				quad3.texCoords = sf::Vector2f(127 + (lettre - 31) * 128, 138);
 				quad4.texCoords = sf::Vector2f((lettre - 31) * 128, 138);
 
-				sf::Color color = (glyphs.cells[cellCount]->ent != nullptr) ? glyphs.cells[cellCount]->ent->baseColor : glyphs.cells[cellCount]->baseColor ;
+				sf::Color color ((glyphs.cells[cellCount]->ent != nullptr) ? glyphs.cells[cellCount]->ent->baseColor : glyphs.cells[cellCount]->baseColor) ;
 				//Thanks a lot KUKURU3
 				color.r = color.r * glyphs.lightCorrection[cellCount];
 				color.g = color.g * glyphs.lightCorrection[cellCount];

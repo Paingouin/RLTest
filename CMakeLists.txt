@@ -17,9 +17,10 @@ endif()
 message(STATUS "Generator .............. ${CMAKE_GENERATOR}")
 message(STATUS "Build Type ............. ${CMAKE_BUILD_TYPE}")
 
+
 project(RLTest)
 
-set (SOURCE_FILE 	        
+set (SOURCE_FILE_PLATEFORM 	        
 			./include/main.h
 			#./include/stb_image.h
 
@@ -29,12 +30,12 @@ set (SOURCE_FILE
 		   )
 
 add_executable(RLTestBin 
-	        ${SOURCE_FILE}
+	        ${SOURCE_FILE_PLATEFORM}
 			./src/main.cpp		
 			)
 
 set_source_files_properties( 
-	        ${SOURCE_FILE}
+	        ${SOURCE_FILE_PLATEFORM}
 			PROPERTIES HEADER_FILE_ONLY TRUE)
 
 
@@ -47,8 +48,34 @@ set_target_properties( RLTestBin
 	WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}" 
 )
 
+
 include(build_options)
 include(build_dependencies)
+
+set (SOURCE_FILE_GAME 	        
+			./include/game.h
+
+			./src/game.cpp		
+		   )
+		   
+
+add_library(Game SHARED    ${SOURCE_FILE_GAME} )
+set_target_properties( Game
+    PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+	VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}" 
+	WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}" 
+)
+
+target_include_directories(Game
+					PRIVATE
+					include
+				)
+
+add_dependencies(RLTestBin Game)
+
 
 target_include_directories(RLTestBin
 					PRIVATE
@@ -68,6 +95,7 @@ target_link_libraries(RLTestBin
 			${SDL2_LIBRARIES}
 			${SFML_LIBRARIES}
 			)
+			
 			
 add_custom_command(TARGET RLTestBin POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory

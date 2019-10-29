@@ -1,11 +1,5 @@
 #pragma once 
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <string>
-#include <iostream>
-#include <algorithm>
-#include <thread>
 
 #include <SFML/Graphics.hpp>
 
@@ -27,6 +21,8 @@
 #include "Mix/World.h"
 
 
+#include "game.h"
+
 #define POST_SHADER_FILENAME         "./Shaders/post.frag"
 #define HEAT_SHADER_FILENAME         "./Shaders/heat.frag"
 #define FONT_FILENAME			     "./Fonts/square.ttf"
@@ -37,15 +33,7 @@
 //#define STBI_ONLY_PNG
 //#include "stb_image.h"
 
-typedef uint8_t		uint8;
-typedef uint32_t	uint32;
-typedef uint64_t	uint64;
-typedef int32_t		int32;
-typedef int64_t		int64;
 
-#define internal static
-#define local_persist static
-#define global_variable static
 
 /*
 typedef unsigned char asciiChar;
@@ -65,28 +53,9 @@ stbi_image_free(imgData);
 
 */
 
-// Helper macros for working with pixel colors
-#define RED(c) ((c & 0xff000000) >> 24)
-#define GREEN(c) ((c & 0x00ff0000) >> 16)
-#define BLUE(c) ((c & 0x0000ff00) >> 8)
-#define ALPHA(c) (c & 0xff)
-
-#define COLOR_FROM_RGBA(r, g, b, a) ((r << 24) | (g << 16) | (b << 8) | a)
 
 /*-------------------------------------------------------------------------------------------------------------------------*/
 
-struct GameConfig
-{
-	const float YAW = -90.0f;
-	const float PITCH = 0.0f;
-	const float SPEED = 2.5f;
-	const float SENSITIVITY = 0.5f;
-	const float ZOOM = 30.0f;
-
-	int winWidth = 1280;
-	int winHeight = 760;
-
-};
 
 //GAME
 
