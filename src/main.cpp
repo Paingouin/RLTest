@@ -446,8 +446,6 @@ int main()
 			LoopPtr();
 		}
 
-
-
 		//PRE-RENDERING
 		camera.m_vertices.clear();
 		camera.m_vertices.setPrimitiveType(sf::Quads);

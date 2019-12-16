@@ -42,5 +42,4 @@ struct GameConfig
 
 
 #define EXPORT extern "C" __declspec( dllexport )
-
 EXPORT void Loop();

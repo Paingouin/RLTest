@@ -3,5 +3,5 @@
 
 EXPORT void Loop()
 {
-	printf("hi\n");
+	//printf("hi\n");
 }
