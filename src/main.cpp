@@ -31,58 +31,58 @@ Plateform must receive only map(pos+color + state of effects) and send controlle
 //		Mouse picking :  check inside UI, if not , check inside rect for each glyph = rotate the mouse pos by invert rectangle
 
 
-#include <Windows.h>
-
-typedef void (*LoopType)();
-LoopType LoopPtr;
-HMODULE GameDLL;
-FILETIME GameDLLWriteTime;
-
-FILETIME Win32GetLastWriteTime(char* path)
-{
-	FILETIME time = {};
-	WIN32_FILE_ATTRIBUTE_DATA data;
-
-	if (GetFileAttributesEx(path, GetFileExInfoStandard, &data))
-		time = data.ftLastWriteTime;
-
-	return time;
-}
-
-void UnloadGameDLL()
-{
-	FreeLibrary(GameDLL);
-	GameDLL = 0;
-	LoopPtr = 0;
-}
-
-void LoadGameDLL()
-{
-	WIN32_FILE_ATTRIBUTE_DATA unused;
-	if (!GetFileAttributesEx("lock.tmp", GetFileExInfoStandard, &unused))
-	{
-		UnloadGameDLL();
-		CopyFile("game.dll", "game_temp.dll", 0);
-		GameDLL = LoadLibrary("game_temp.dll");
-
-		if (!GameDLL)
-		{
-			DWORD err = GetLastError();
-			printf("Can't load lib: %d\n", err);
-			return;
-		}
-
-		LoopPtr = (LoopType)GetProcAddress(GameDLL, "Loop");
-		if (!LoopPtr)
-		{
-			DWORD err = GetLastError();
-			printf("Cant load func: %d\n", err);
-			return;
-		}
-
-		GameDLLWriteTime = Win32GetLastWriteTime("game.dll");
-	}
-}
+//#include <Windows.h>
+//
+//typedef void (*LoopType)();
+//LoopType LoopPtr;
+//HMODULE GameDLL;
+//FILETIME GameDLLWriteTime;
+//
+//FILETIME Win32GetLastWriteTime(char* path)
+//{
+//	FILETIME time = {};
+//	WIN32_FILE_ATTRIBUTE_DATA data;
+//
+//	if (GetFileAttributesEx(path, GetFileExInfoStandard, &data))
+//		time = data.ftLastWriteTime;
+//
+//	return time;
+//}
+//
+//void UnloadGameDLL()
+//{
+//	FreeLibrary(GameDLL);
+//	GameDLL = 0;
+//	LoopPtr = 0;
+//}
+//
+//void LoadGameDLL()
+//{
+//	WIN32_FILE_ATTRIBUTE_DATA unused;
+//	if (!GetFileAttributesEx("lock.tmp", GetFileExInfoStandard, &unused))
+//	{
+//		UnloadGameDLL();
+//		CopyFile("game.dll", "game_temp.dll", 0);
+//		GameDLL = LoadLibrary("game_temp.dll");
+//
+//		if (!GameDLL)
+//		{
+//			DWORD err = GetLastError();
+//			printf("Can't load lib: %d\n", err);
+//			return;
+//		}
+//
+//		LoopPtr = (LoopType)GetProcAddress(GameDLL, "Loop");
+//		if (!LoopPtr)
+//		{
+//			DWORD err = GetLastError();
+//			printf("Cant load func: %d\n", err);
+//			return;
+//		}
+//
+//		GameDLLWriteTime = Win32GetLastWriteTime("game.dll");
+//	}
+//}
 
 
 
@@ -176,7 +176,7 @@ int main()
 	//window.setFramerateLimit(60);
 
 
-	LoadGameDLL();
+	//LoadGameDLL();
 
 
 	sf::Font font;
@@ -219,7 +219,7 @@ int main()
 	}
 
 	// Load shaders"'
-	sf::Shader postEffect;
+	/*sf::Shader postEffect;
 	if (!postEffect.loadFromFile(POST_SHADER_FILENAME, sf::Shader::Fragment))
 	{
 		std::cerr << "Error while loading shaders" << POST_SHADER_FILENAME << std::endl;
@@ -231,7 +231,7 @@ int main()
 	{
 		std::cerr << "Error while loading shaders" << HEAT_SHADER_FILENAME << std::endl;
 		return -1;
-	}
+	}*/
 
 	//UI (and controls? )
 	UI ui = {};
@@ -436,15 +436,15 @@ int main()
 		//END LIGHT
 
 
-		FILETIME newTime = Win32GetLastWriteTime("game.dll");
+		//FILETIME newTime = Win32GetLastWriteTime("game.dll");
 
-		if (CompareFileTime(&newTime, &GameDLLWriteTime))
-			LoadGameDLL();
+		//if (CompareFileTime(&newTime, &GameDLLWriteTime))
+		//	LoadGameDLL();
 
-		while (timer.doUpdate())
-		{
-			LoopPtr();
-		}
+		//while (timer.doUpdate())
+		//{
+		//	//LoopPtr();
+		//}
 
 		//PRE-RENDERING
 		camera.m_vertices.clear();
@@ -470,7 +470,7 @@ int main()
 
 		windowTexture.draw(camera.m_vertices, &asciiTexture.getTexture());  //Draw all the ascii sprites
 
-		/*sf::VertexArray lines(sf::LinesStrip, 2);
+		sf::VertexArray lines(sf::LinesStrip, 2);
 		lines[0].position = sf::Vector2f(gc.winWidth/2, 0);
 		lines[1].position = sf::Vector2f(gc.winWidth/2, gc.winHeight);
 
@@ -478,7 +478,7 @@ int main()
 
 		lines[0].position = sf::Vector2f(0, gc.winHeight / 2);
 		lines[1].position = sf::Vector2f(gc.winWidth, gc.winHeight / 2);
-		windowTexture.draw(lines);*/
+		windowTexture.draw(lines);
 
 
 
@@ -499,15 +499,15 @@ int main()
 		quad[2].texCoords = sf::Vector2f(gc.winWidth / 2 + 200, gc.winHeight / 2 + 200);
 		quad[3].texCoords = sf::Vector2f(gc.winWidth / 2 - 200, gc.winHeight / 2 + 200);
 
-		sf::Texture text2(windowTexture.getTexture());
-		heatEffect.setUniform("backGround", text2);
-		heatEffect.setUniform("iTime", timer.time.getElapsedTime().asSeconds());
-		heatEffect.setUniform("iResolution", sf::Vector3f(text2.getSize().x, text2.getSize().y, 1));
-		sf::RenderStates states;
+		//sf::Texture text2(windowTexture.getTexture());
+		//heatEffect.setUniform("backGround", text2);
+		//heatEffect.setUniform("iTime", timer.time.getElapsedTime().asSeconds());
+		//heatEffect.setUniform("iResolution", sf::Vector3f(text2.getSize().x, text2.getSize().y, 1));
+		//sf::RenderStates states;
 
-		states.shader = &heatEffect;
+		//states.shader = &heatEffect;
 
-		windowTexture.draw(quad, states);
+		//windowTexture.draw(quad, states);
 
 
 		//UI
@@ -520,7 +520,7 @@ int main()
 					+ "\nPos Player X:" + std::to_string((int)player.x) + " Y:" + std::to_string((int)player.y)
 					, font, 16);
 		
-		ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mouseDown * 8) ), fpsTxt, windowTexture, heatEffect, timer.time.getElapsedTime().asSeconds());
+		//ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mouseDown * 8) ), fpsTxt, windowTexture, heatEffect, timer.time.getElapsedTime().asSeconds());
 
 		ui.finish();
 
@@ -535,8 +535,8 @@ int main()
 		
 		//draw to windows
 
-		postEffect.setUniform("texture", sf::Shader::CurrentTexture);
-		window.draw(endWindow,&postEffect);
+	//	postEffect.setUniform("texture", sf::Shader::CurrentTexture);
+		window.draw(endWindow);
 		window.display();
 
 

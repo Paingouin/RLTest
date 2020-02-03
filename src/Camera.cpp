@@ -148,7 +148,7 @@ struct Camera
 			Zoom = 90.0f;
 	}
 
-	void  __fastcall spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f , float playerHeight =0.0f)
+	void   spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f , float playerHeight =0.0f)
 	{
 		glm::aligned_vec4 orig;
 		if (cell.ent == nullptr)
@@ -212,7 +212,7 @@ struct Camera
 
 
 	//Calculate Global position of all cells to the screen based of camera
-	std::vector<Glyph> __fastcall to_global(std::vector<Cell>& cells , float playerHeight)
+	std::vector<Glyph> to_global(std::vector<Cell>& cells , float playerHeight)
 	{
 		Glyphs glyphs;
 		glyphs.coordinates.reserve(cells.size() * 12);

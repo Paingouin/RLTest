@@ -1,0 +1,37 @@
+﻿{
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}\\build",
+      "installRoot": "${projectDir}\\build",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "variables": []
+    },
+    {
+      "addressSanitizerRuntimeFlags": "detect_leaks=0",
+      "buildCommandArgs": "",
+      "cmakeCommandArgs": "",
+      "cmakeExecutable": "/usr/bin/cmake",
+      "configurationType": "Debug",
+      "ctestCommandArgs": "",
+      "generator": "Unix Makefiles",
+      "inheritEnvironments": [ "linux_x64" ],
+      "name": "Linux-Debug",
+      "remoteBuildRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/build/${name}",
+      "remoteCMakeListsRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/src",
+      "remoteCopyBuildOutput": false,
+      "remoteCopySources": true,
+      "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+      "remoteCopySourcesMethod": "rsync",
+      "remoteInstallRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/install/${name}",
+      "remoteMachineName": "${defaultRemoteMachineName}",
+      "rsyncCommandArgs": "-t --delete ",
+      "variables": []
+    }
+  ]
+}
