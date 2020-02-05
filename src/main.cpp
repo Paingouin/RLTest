@@ -219,7 +219,7 @@ int main()
 	}
 
 	// Load shaders"'
-	/*sf::Shader postEffect;
+	sf::Shader postEffect;
 	if (!postEffect.loadFromFile(POST_SHADER_FILENAME, sf::Shader::Fragment))
 	{
 		std::cerr << "Error while loading shaders" << POST_SHADER_FILENAME << std::endl;
@@ -231,7 +231,7 @@ int main()
 	{
 		std::cerr << "Error while loading shaders" << HEAT_SHADER_FILENAME << std::endl;
 		return -1;
-	}*/
+	}
 
 	//UI (and controls? )
 	UI ui = {};
@@ -520,7 +520,7 @@ int main()
 					+ "\nPos Player X:" + std::to_string((int)player.x) + " Y:" + std::to_string((int)player.y)
 					, font, 16);
 		
-		//ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mouseDown * 8) ), fpsTxt, windowTexture, heatEffect, timer.time.getElapsedTime().asSeconds());
+		ui.drawRect(0, 0, 100, 50, sf::Color(0xff << (ui.mouseDown * 8) ), fpsTxt, windowTexture, heatEffect, timer.time.getElapsedTime().asSeconds());
 
 		ui.finish();
 

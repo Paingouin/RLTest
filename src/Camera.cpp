@@ -1,4 +1,6 @@
 #include "main.h"
+#include <algorithm>
+#include <execution>
 
 struct Camera
 {
@@ -148,7 +150,69 @@ struct Camera
 			Zoom = 90.0f;
 	}
 
-	void   spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f , float playerHeight =0.0f)
+
+	void   spriteFromCell2(Glyphs& glyphs, Cell& cell, double heightMod = 0.f, float playerHeight = 0.0f)
+	{
+		glm::aligned_vec4 orig;
+		if (cell.ent == nullptr)
+		{
+			orig = { cell.x, cell.y, cell.z + heightMod, 1.f };
+		}
+		else
+		{
+			orig = { cell.ent->x, cell.ent->y, cell.ent->z + heightMod, 1.f };
+		}
+
+		glm::aligned_vec4 a[5];
+		a[0] = mModelView * orig * 1.7f;  //POS : center
+		a[1] = { -0.5,    0.5, a[0].z ,1.f }; //LU
+		a[2] = { 0.5,     0.5, a[0].z ,1.f }; //RU
+		a[3] = { 0.5,    -0.5, a[0].z ,1.f }; //RB
+		a[4] = { -0.5,   -0.5, a[0].z ,1.f }; //LB
+
+		//Don't rotate entities
+		if (cell.ent == nullptr)
+		{
+			float tmpX = a[1].x;
+			float tmpY = a[1].y;
+			a[1].x = tmpX * c - tmpY * s;
+			a[1].y = tmpX * s + tmpY * c;
+			tmpX = a[2].x;
+			tmpY = a[2].y;
+			a[2].x = tmpX * c - tmpY * s;
+			a[2].y = tmpX * s + tmpY * c;
+			tmpX = a[3].x;
+			tmpY = a[3].y;
+			a[3].x = tmpX * c - tmpY * s;
+			a[3].y = tmpX * s + tmpY * c;
+			tmpX = a[4].x;
+			tmpY = a[4].y;
+			a[4].x = tmpX * c - tmpY * s;
+			a[4].y = tmpX * s + tmpY * c;
+
+		}
+
+		a[1] += a[0];
+		a[2] += a[0];
+		a[3] += a[0];
+		a[4] += a[0];
+
+
+		//	glyphs.coordinates.insert(glyphs.coordinates.end(), a, a + (sizeof(a) / sizeof(a[0])));//below seems to be faster when profiling...
+		glyphs.coordinates.emplace_back(a[0]);
+		glyphs.coordinates.emplace_back(a[1]);
+		glyphs.coordinates.emplace_back(a[2]);
+		glyphs.coordinates.emplace_back(a[3]);
+		glyphs.coordinates.emplace_back(a[4]);
+
+		glyphs.cells.emplace_back(&cell);
+
+		float delta = glm::abs(orig.z - playerHeight);
+		glyphs.lightCorrection.emplace_back(glm::clamp(1.0 - (delta * delta) / (2.0 * 2.0), 0.0, 1.0));
+
+	}
+
+	void   spriteFromCell(Glyphs& glyphs,Cell& cell, double heightMod = 0.f , float playerHeight = 0.0f)
 	{
 		glm::aligned_vec4 orig;
 		if (cell.ent == nullptr)
@@ -161,7 +225,7 @@ struct Camera
 		}
 			
 		glm::aligned_vec4 a[5];
-		a[0] = mModelView * orig * 1.7f;  //POS : center
+		a[0] = mModelView * orig * 1.7f;      //POS : center
 		a[1] = { -0.5,    0.5, a[0].z ,1.f }; //LU
 		a[2] = { 0.5,     0.5, a[0].z ,1.f }; //RU
 		a[3] = { 0.5,    -0.5, a[0].z ,1.f }; //RB
@@ -235,15 +299,19 @@ struct Camera
 			}
 		}
 
-		for (glm::aligned_vec4& point : glyphs.coordinates)
-		{
-			point = mProjection * point;
-		}
+		std::for_each(std::execution::par_unseq, glyphs.coordinates.begin(), glyphs.coordinates.end(),
+			[&](glm::aligned_vec4& point) {point = mProjection * point; point /= point.w; }
+		);
 
-		for (glm::aligned_vec4& point : glyphs.coordinates)
+		//for (glm::aligned_vec4& point : glyphs.coordinates)
+		//{
+		//	point = mProjection * point;
+		//}
+
+		/*for (glm::aligned_vec4& point : glyphs.coordinates)
 		{
 			point /= point.w;
-		}
+		}*/
 
 
 		std::vector<Glyph> returnedGlyph;

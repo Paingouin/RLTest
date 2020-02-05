@@ -1,7 +1,7 @@
 #include "game.h"
 #include <cstdio>
-
-EXPORT void Loop()
-{
-	//printf("hi\n");
-}
+//
+//EXPORT void Loop()
+//{
+//	//printf("hi\n");
+//}
