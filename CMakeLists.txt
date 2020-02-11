@@ -14,7 +14,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_SOURCE_DIR}/cmake")
 
 if(MSVC)
     set(CMAKE_DEBUG_POSTFIX d)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")  # enable parallel builds
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP /std:c++latest")  # enable parallel builds
 endif()
 	
 message(STATUS "Generator .............. ${CMAKE_GENERATOR}")
@@ -84,7 +84,8 @@ MESSAGE(STATUS "SFML Installing to: ${CMAKE_INSTALL_PREFIX}/${CMAKE_BUILD_TYPE}"
 SET(SFML_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/deps/${CMAKE_BUILD_TYPE}/include)
 SET(SFML_LIBRARY_DIR ${CMAKE_INSTALL_PREFIX}/deps/${CMAKE_BUILD_TYPE}/lib)
 
-message("${SFML_LIBRARY_DIR}")
+message("INCLUDES_SFML : ${SFML_INCLUDE_DIR}")
+message("LIBS_SFML : ${SFML_LIBRARY_DIR}")
 
 set(SFML_GRAPHIC_BASE_NAME "sfml-graphics")
 set(SFML_WINDOW_BASE_NAME "sfml-window")
